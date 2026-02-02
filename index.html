@@ -2,23 +2,22 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notion Planner Widget v2</title>
+    <title>Notion Planner Widget v3</title>
     <style>
         :root { --bg: #ffffff; --text: #333; --accent: #d44c47; }
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: var(--bg); margin: 0; padding: 20px; user-select: none; }
-        #canvas-container { position: relative; width: 320px; height: 320px; cursor: crosshair; }
-        canvas { border-radius: 50%; }
+        #canvas-container { position: relative; width: 320px; height: 320px; }
+        canvas { border-radius: 50%; cursor: pointer; }
         .info-panel { margin-top: 25px; text-align: center; min-height: 80px; }
         .current-time { color: var(--accent); font-weight: bold; font-size: 1.4rem; margin-bottom: 8px; }
         .current-task { font-size: 1.2rem; color: var(--text); font-weight: 500; }
         
-        /* 모달 레이아웃 */
+        /* 모달 스타일 */
         #modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 1000; width: 260px; }
         .input-row { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
         .num-ctrl { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .num-ctrl input { width: 55px; text-align: center; font-size: 1.1rem; padding: 5px; border: 1px solid #ddd; border-radius: 5px; }
-        .arrow-btn { cursor: pointer; background: #f5f5f5; border: 1px solid #ddd; width: 30px; height: 25px; border-radius: 4px; }
+        .arrow-btn { cursor: pointer; background: #f5f5f5; border: 1px solid #ddd; width: 35px; height: 30px; border-radius: 4px; font-weight: bold; }
         input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
         .save-btn { width: 100%; background: #333; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         #setup-screen { text-align: center; padding: 50px; }
@@ -27,7 +26,7 @@
 <body>
 
 <div id="setup-screen">
-    <h2 style="margin-bottom:20px;">전체 시간 범위 설정</h2>
+    <h2>전체 시간 범위 설정</h2>
     <input type="time" id="start-time" value="09:00"> ~ 
     <input type="time" id="end-time" value="21:00">
     <br><br>
@@ -39,13 +38,13 @@
         <canvas id="plannerCanvas" width="320" height="320"></canvas>
     </div>
     <div class="info-panel">
-        <div id="display-time" class="current-time">00:00 ~ 00:00</div>
+        <div id="display-time" class="current-time">--:-- ~ --:--</div>
         <div id="display-task" class="current-task">현재 일과가 없습니다.</div>
     </div>
 </div>
 
 <div id="modal">
-    <h3 id="modal-title" style="margin-top:0;">일과 추가/수정</h3>
+    <h3 id="modal-title" style="margin-top:0;">일과 편집</h3>
     <div class="input-row">
         <div class="num-ctrl">
             <button class="arrow-btn" onclick="adj(1,0)">▲</button>
@@ -62,18 +61,21 @@
     </div>
     <input type="text" id="task-in" placeholder="할 일을 입력하세요">
     <button class="save-btn" onclick="handleSave()">저장</button>
-    <button onclick="closeModal()" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer;">취소</button>
+    <button id="del-btn" onclick="deleteTask()" style="width:100%; background:none; border:none; color:#d44c47; margin-top:10px; cursor:pointer; font-size: 0.9rem;">삭제하기</button>
+    <button onclick="closeModal()" style="width:100%; background:none; border:none; color:#888; margin-top:5px; cursor:pointer;">취소</button>
 </div>
 
 <script>
     let startTime, endTime, totalMin;
     let tasks = [];
-    let editingIndex = -1;
-    let draggingIndex = -1;
+    let editingIdx = -1;
+    let dragIdx = -1;
+    let isDragging = false;
+    
     const canvas = document.getElementById('plannerCanvas');
     const ctx = canvas.getContext('2d');
-    const colors = ['#C5B4E3', '#B2E2E2', '#F9E4B7', '#F8BBD0', '#C8E6C9'];
-    let mouse = { x: 0, y: 0, overEmpty: false };
+    const colors = ['#C5B4E3', '#B2E2E2', '#F9E4B7', '#F8BBD0', '#C8E6C9', '#FFE082', '#A1887F'];
+    let mouse = { x: 0, y: 0, overIdx: -1 };
 
     function initChart() {
         const s = document.getElementById('start-time').value.split(':');
@@ -84,40 +86,40 @@
         totalMin = endTime - startTime;
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('main-widget').style.display = 'flex';
-        loop();
+        render();
     }
 
     function adj(h, m) {
         const hi = document.getElementById('h-in'), mi = document.getElementById('m-in');
-        let curH = parseInt(hi.value), curM = parseInt(mi.value);
-        curH += h; curM += m;
-        if(curM >= 60) { curH++; curM = 0; }
-        if(curM < 0) { curH--; curM = 45; }
-        const currentDur = (curH * 60) + curM;
-        const used = tasks.reduce((s, t, i) => s + (i === editingIndex ? 0 : t.dur), 0);
-        if(currentDur > (totalMin - used)) { alert("남은 시간을 초과했습니다!"); return; }
+        let curH = parseInt(hi.value) + h, curM = parseInt(mi.value) + m;
+        if(curM >= 60) { curH++; curM = 0; } if(curM < 0) { curH--; curM = 45; }
+        const curDur = (curH * 60) + curM;
+        const used = tasks.reduce((s, t, i) => s + (i === editingIdx ? 0 : t.dur), 0);
+        if(curDur > (totalMin - used)) { alert("전체 시간을 초과할 수 없습니다!"); return; }
         hi.value = Math.max(0, curH); mi.value = Math.max(0, curM);
     }
 
-    function loop() {
+    function render() {
         ctx.clearRect(0,0,320,320);
-        const cx=160, cy=160, r=150;
+        const cx=160, cy=160, r=145;
         
-        // 외곽선
+        // 배경 원
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+        ctx.fillStyle = '#fff'; ctx.fill();
         ctx.strokeStyle = '#333'; ctx.lineWidth = 3; ctx.stroke();
 
         let curA = -Math.PI/2;
         tasks.forEach((t, i) => {
             const sweep = (t.dur / totalMin) * Math.PI*2;
-            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, curA, curA + sweep);
-            ctx.fillStyle = colors[i % colors.length]; ctx.fill();
-            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, r, curA, curA + sweep);
+            ctx.fillStyle = (dragIdx === i) ? '#eee' : colors[i % colors.length];
+            ctx.fill(); ctx.stroke();
             t.startA = curA; t.endA = curA + sweep;
             curA += sweep;
         });
 
-        // 현재 시간 침
+        // 빨간 시간 침
         const now = new Date();
         const nowMin = now.getHours()*60 + now.getMinutes();
         if(nowMin >= startTime && nowMin <= endTime) {
@@ -127,18 +129,88 @@
             ctx.strokeStyle = '#d44c47'; ctx.lineWidth = 3; ctx.stroke();
         }
 
-        // 마우스 추적 '+' 표시 (빈 공간일 때만)
-        if(mouse.overEmpty) {
-            ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.font = "30px Arial";
-            ctx.textAlign = "center"; ctx.fillText("+", mouse.x, mouse.y + 10);
+        // '+' 표시: 빈 공간일 때만 마우스 위치에
+        if(mouse.overIdx === -1 && isInsideCircle(mouse.x, mouse.y)) {
+            const used = tasks.reduce((s, t) => s + t.dur, 0);
+            if(used < totalMin) {
+                ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.font = "bold 30px Arial";
+                ctx.textAlign = "center"; ctx.fillText("+", mouse.x, mouse.y + 10);
+            }
         }
-
-        updateUI(nowMin);
-        requestAnimationFrame(loop);
+        updateInfo(nowMin);
+        requestAnimationFrame(render);
     }
 
-    function updateUI(nowMin) {
-        let cum = 0; let found = false;
+    function isInsideCircle(x, y) { return Math.sqrt((x-160)**2 + (y-160)**2) < 145; }
+
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left; mouse.y = e.clientY - rect.top;
+        const dx = mouse.x - 160, dy = mouse.y - 160;
+        let angle = Math.atan2(dy, dx);
+        if(angle < -Math.PI/2) angle += Math.PI*2;
+        
+        mouse.overIdx = tasks.findIndex(t => angle >= t.startA && angle < t.endA);
+        
+        // 드래그 중 순서 변경
+        if(isDragging && dragIdx !== -1) {
+            if(mouse.overIdx !== -1 && mouse.overIdx !== dragIdx) {
+                const item = tasks.splice(dragIdx, 1)[0];
+                tasks.splice(mouse.overIdx, 0, item);
+                dragIdx = mouse.overIdx;
+            }
+        }
+    });
+
+    canvas.addEventListener('mousedown', () => {
+        if(!isInsideCircle(mouse.x, mouse.y)) return;
+        if(mouse.overIdx !== -1) {
+            dragIdx = mouse.overIdx;
+            isDragging = true;
+            // 0.5초 이상 누르고 있으면 드래그 모드, 단순 클릭은 수정 모달
+            this.clickTimer = setTimeout(() => { if(!isDragging) return; }, 200);
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        clearTimeout(this.clickTimer);
+        if(!isDragging && isInsideCircle(mouse.x, mouse.y)) {
+            if(mouse.overIdx !== -1) { // 수정
+                openEdit(mouse.overIdx);
+            } else { // 추가
+                openEdit(-1);
+            }
+        }
+        isDragging = false; dragIdx = -1;
+    });
+
+    function openEdit(idx) {
+        editingIdx = idx;
+        const used = tasks.reduce((s, t, i) => s + (i === editingIdx ? 0 : t.dur), 0);
+        if(idx === -1 && used >= totalMin) return;
+
+        document.getElementById('modal-title').innerText = idx === -1 ? "새 일과 추가" : "일과 수정";
+        document.getElementById('del-btn').style.display = idx === -1 ? "none" : "block";
+        document.getElementById('h-in').value = idx === -1 ? 1 : Math.floor(tasks[idx].dur/60);
+        document.getElementById('m-in').value = idx === -1 ? 0 : tasks[idx].dur%60;
+        document.getElementById('task-in').value = idx === -1 ? "" : tasks[idx].name;
+        document.getElementById('modal').style.display = 'block';
+    }
+
+    function handleSave() {
+        const dur = parseInt(document.getElementById('h-in').value)*60 + parseInt(document.getElementById('m-in').value);
+        if(dur <= 0) return;
+        const name = document.getElementById('task-in').value || "할 일";
+        if(editingIdx > -1) tasks[editingIdx] = { dur, name };
+        else tasks.push({ dur, name });
+        closeModal();
+    }
+
+    function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); closeModal(); }
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+    function updateInfo(nowMin) {
+        let cum = 0, found = false;
         tasks.forEach(t => {
             const s = startTime + cum, e = s + t.dur;
             if(nowMin >= s && nowMin < e) {
@@ -148,74 +220,12 @@
             }
             cum += t.dur;
         });
-        if(!found) { 
+        if(!found) {
             document.getElementById('display-time').innerText = "--:-- ~ --:--";
-            document.getElementById('display-task').innerText = "진행 중인 일과 없음";
+            document.getElementById('display-task').innerText = "일과 없음";
         }
     }
-
     function fmt(m) { return `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
-
-    canvas.addEventListener('mousemove', e => {
-        const rect = canvas.getBoundingClientRect();
-        mouse.x = e.clientX - rect.left; mouse.y = e.clientY - rect.top;
-        const dx = mouse.x - 160, dy = mouse.y - 160;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        const angle = Math.atan2(dy, dx);
-        const normalizedA = angle < -Math.PI/2 ? angle + Math.PI*2 : angle;
-
-        let inTask = false;
-        tasks.forEach((t, i) => { if(normalizedA >= t.startA && normalizedA < t.endA) inTask = true; });
-        mouse.overEmpty = dist < 150 && !inTask;
-    });
-
-    canvas.addEventListener('mousedown', e => {
-        const dx = mouse.x - 160, dy = mouse.y - 160;
-        const angle = Math.atan2(dy, dx);
-        const normalizedA = angle < -Math.PI/2 ? angle + Math.PI*2 : angle;
-        
-        const idx = tasks.findIndex(t => normalizedA >= t.startA && normalizedA < t.endA);
-        if(idx !== -1) {
-            if(e.shiftKey) { // 드래그 시작 (Shift 누르고 드래그 시 순서 변경)
-                draggingIndex = idx;
-            } else { // 수정 모달
-                editingIndex = idx;
-                document.getElementById('h-in').value = Math.floor(tasks[idx].dur/60);
-                document.getElementById('m-in').value = tasks[idx].dur%60;
-                document.getElementById('task-in').value = tasks[idx].name;
-                document.getElementById('modal').style.display = 'block';
-            }
-        } else if(mouse.overEmpty) {
-            editingIndex = -1;
-            document.getElementById('task-in').value = "";
-            document.getElementById('modal').style.display = 'block';
-        }
-    });
-
-    // 드래그 순서 변경 로직
-    canvas.addEventListener('mouseup', e => {
-        if(draggingIndex !== -1) {
-            const dx = mouse.x - 160, dy = mouse.y - 160;
-            const angle = Math.atan2(dy, dx);
-            const normalizedA = angle < -Math.PI/2 ? angle + Math.PI*2 : angle;
-            const targetIdx = tasks.findIndex(t => normalizedA >= t.startA && normalizedA < t.endA);
-            if(targetIdx !== -1 && targetIdx !== draggingIndex) {
-                const item = tasks.splice(draggingIndex, 1)[0];
-                tasks.splice(targetIdx, 0, item);
-            }
-            draggingIndex = -1;
-        }
-    });
-
-    function handleSave() {
-        const dur = parseInt(document.getElementById('h-in').value)*60 + parseInt(document.getElementById('m-in').value);
-        const name = document.getElementById('task-in').value || "일과";
-        if(editingIndex > -1) tasks[editingIndex] = { dur, name };
-        else tasks.push({ dur, name });
-        closeModal();
-    }
-
-    function closeModal() { document.getElementById('modal').style.display = 'none'; }
 </script>
 </body>
 </html>
