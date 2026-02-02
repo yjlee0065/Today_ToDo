@@ -2,126 +2,108 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Sophisticated Notion Planner</title>
+    <title>Soft Pastel Planner</title>
     <style>
         :root { 
             --bg: #ffffff; 
-            --text-main: #37352f; 
-            --text-sub: #787774;
-            --accent-soft: #5e6ad2; /* 차분한 블루 톤으로 변경 */
-            --border-circle: #444444; /* 검은색 대신 진한 회색 */
-            --border-light: #efefef;
+            --text-main: #444444; 
+            --text-sub: #888888;
+            /* 침과 시간 글씨에 사용할 부드러운 로즈/코랄 톤 */
+            --point-pastel: #f4a7a7; 
+            --border-soft: #f0f0f0;
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             display: flex; flex-direction: column; align-items: center; 
-            background: var(--bg); margin: 0; padding: 30px; user-select: none; color: var(--text-main);
+            background: var(--bg); margin: 0; padding: 15px; user-select: none; color: var(--text-main);
         }
         
         #main-widget { display: flex; flex-direction: column; align-items: center; width: 100%; }
         
+        /* 전체 크기 축소 (320px -> 260px) */
         #canvas-container { 
             position: relative; 
-            width: 320px; height: 320px; 
-            margin-bottom: 40px;
-            filter: drop-shadow(0 4px 15px rgba(0,0,0,0.05));
+            width: 260px; height: 260px; 
+            margin-bottom: 25px;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.05));
         }
         
-        /* 정보 패널: 빨간색 제거 및 가독성 향상 */
+        /* 정보 패널: 빨간색 제거 및 파스텔 톤 적용 */
         .info-panel { 
             text-align: center; 
-            padding: 15px 25px;
-            border-radius: 14px;
-            background: #fbfbfa;
-            border: 1px solid var(--border-light);
-            min-width: 260px;
+            padding: 8px 15px;
+            border-radius: 10px;
+            background: #fdfdfd;
+            border: 1px solid var(--border-soft);
+            min-width: 200px;
         }
         .current-time { 
-            color: var(--accent-soft); /* 부드러운 포인트 컬러 */
+            color: var(--point-pastel); 
             font-weight: 700; 
-            font-size: 1.4rem; 
-            letter-spacing: -0.01em;
-            margin-bottom: 6px; 
+            font-size: 1.15rem; 
+            margin-bottom: 4px; 
         }
         .current-task { 
-            font-size: 1.15rem; 
+            font-size: 1rem; 
             color: var(--text-main); 
             font-weight: 500;
         }
         
-        /* 모달 디자인 */
+        /* 모달 스타일 유지 */
         #modal { 
             display: none; position: fixed; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); background: white; 
-            padding: 30px; border-radius: 16px; 
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15); 
-            z-index: 1000; width: 280px; border: 1px solid var(--border-light); 
+            padding: 20px; border-radius: 12px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1); 
+            z-index: 1000; width: 240px; border: 1px solid var(--border-soft); 
         }
-        .input-row { display: flex; justify-content: center; gap: 12px; margin: 20px 0; }
-        .num-ctrl { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        .num-ctrl input { 
-            width: 65px; text-align: center; font-size: 1.2rem; 
-            padding: 10px; border: 1px solid #e5e5e5; border-radius: 8px; 
-            background: #fafafa; outline: none;
-        }
-        .arrow-btn { 
-            cursor: pointer; background: white; border: 1px solid #ddd; 
-            width: 44px; height: 32px; border-radius: 6px; color: #666;
-        }
-        input[type="text"] { 
-            width: 100%; padding: 14px; box-sizing: border-box; 
-            border: 1px solid #e0e0e0; border-radius: 8px; 
-            margin-bottom: 20px; font-size: 1rem; outline: none;
-        }
-        .save-btn { 
-            width: 100%; background: var(--text-main); color: white; border: none; 
-            padding: 14px; border-radius: 8px; font-weight: 600; cursor: pointer; 
-        }
-        #setup-screen { text-align: center; padding-top: 100px; }
+        .input-row { display: flex; justify-content: center; gap: 10px; margin: 15px 0; }
+        .num-ctrl input { width: 50px; text-align: center; padding: 8px; border: 1px solid #eee; border-radius: 6px; }
+        .arrow-btn { cursor: pointer; background: #fafafa; border: 1px solid #ddd; width: 35px; height: 28px; border-radius: 4px; }
+        input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #eee; border-radius: 6px; margin-bottom: 15px; outline: none; }
+        .save-btn { width: 100%; background: #555; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; }
+        
+        #setup-screen { text-align: center; padding-top: 50px; }
     </style>
 </head>
 <body>
 
 <div id="setup-screen">
-    <h2 style="font-weight: 700; margin-bottom: 30px;">Routine Planner</h2>
-    <input type="time" id="start-time" value="09:00" style="padding:10px; border-radius:6px; border:1px solid #ddd;"> 
-    <span style="color: #999;">to</span>
-    <input type="time" id="end-time" value="21:00" style="padding:10px; border-radius:6px; border:1px solid #ddd;">
+    <h3 style="color: #666;">Set Your Day</h3>
+    <input type="time" id="start-time" value="09:00"> ~ <input type="time" id="end-time" value="21:00">
     <br><br>
-    <button class="save-btn" onclick="initChart()" style="width: auto; padding: 12px 30px;">시작하기</button>
+    <button class="save-btn" onclick="initChart()" style="width: auto; padding: 8px 20px;">Create Planner</button>
 </div>
 
 <div id="main-widget" style="display:none;">
     <div id="canvas-container">
-        <canvas id="plannerCanvas" width="320" height="320"></canvas>
+        <canvas id="plannerCanvas" width="260" height="260"></canvas>
     </div>
     <div class="info-panel">
         <div id="display-time" class="current-time">--:-- ~ --:--</div>
-        <div id="display-task" class="current-task">진행 중인 일과가 없습니다</div>
+        <div id="display-task" class="current-task">일과가 없습니다</div>
     </div>
 </div>
 
 <div id="modal">
-    <h3 id="modal-title" style="margin: 0 0 15px 0; font-size: 1.1rem; text-align: center;">일과 편집</h3>
+    <h4 id="modal-title" style="margin: 0 0 10px 0; text-align: center;">Edit Plan</h4>
     <div class="input-row">
         <div class="num-ctrl">
             <button class="arrow-btn" onclick="adj(1,0)">▲</button>
             <input type="number" id="h-in" value="1">
             <button class="arrow-btn" onclick="adj(-1,0)">▼</button>
-            <small style="color: #aaa;">Hours</small>
         </div>
         <div class="num-ctrl">
             <button class="arrow-btn" onclick="adj(0,15)">▲</button>
             <input type="number" id="m-in" value="0">
             <button class="arrow-btn" onclick="adj(0,-15)">▼</button>
-            <small style="color: #aaa;">Mins</small>
         </div>
     </div>
     <input type="text" id="task-in" placeholder="할 일 입력">
-    <button class="save-btn" onclick="handleSave()">저장하기</button>
-    <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <button id="del-btn" onclick="deleteTask()" style="flex: 1; background: none; border: none; color: #888; cursor: pointer; font-size: 0.9rem;">삭제</button>
-        <button onclick="closeModal()" style="flex: 1; background: none; border: none; color: #aaa; cursor: pointer; font-size: 0.9rem;">취소</button>
+    <button class="save-btn" onclick="handleSave()">저장</button>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button id="del-btn" onclick="deleteTask()" style="flex: 1; background: none; border: none; color: #aaa; cursor: pointer; font-size: 0.8rem;">삭제</button>
+        <button onclick="closeModal()" style="flex: 1; background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.8rem;">취소</button>
     </div>
 </div>
 
@@ -133,7 +115,7 @@
     const canvas = document.getElementById('plannerCanvas');
     const ctx = canvas.getContext('2d');
     
-    // 요청하신 파스텔 순환: 하늘 -> 분홍 -> 하늘 -> 연보라
+    // 파스텔 순환: 하늘 -> 분홍 -> 하늘 -> 연보라
     const colorPalette = ['#D4E9F8', '#F0D7F1', '#D8F4FB', '#DDD4F0', '#D4DDF4', '#FFE0F0', '#E0F7FA', '#E8EAF6'];
     let mouse = { x: 0, y: 0, overIdx: -1 };
 
@@ -153,64 +135,64 @@
         const hi = document.getElementById('h-in'), mi = document.getElementById('m-in');
         let cH = parseInt(hi.value) + h, cM = parseInt(mi.value) + m;
         if(cM >= 60) { cH++; cM = 0; } if(cM < 0) { cH--; cM = 45; }
-        const cD = (cH * 60) + cM;
         const used = tasks.reduce((s, t, i) => s + (i === editingIdx ? 0 : t.dur), 0);
-        if(cD > (totalMin - used)) return;
+        if((cH*60+cM) > (totalMin - used)) return;
         hi.value = Math.max(0, cH); mi.value = Math.max(0, cM);
     }
 
     function render() {
-        ctx.clearRect(0,0,320,320);
-        const cx=160, cy=160, r=148;
+        ctx.clearRect(0,0,260,260);
+        const cx=130, cy=130, r=120; // 반지름 축소
         
+        // 배경 원: 검은 테두리 대신 연한 회색으로 변경
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
         ctx.fillStyle = '#ffffff'; ctx.fill();
+        ctx.strokeStyle = '#eeeeee'; ctx.lineWidth = 1; ctx.stroke();
 
         let curA = -Math.PI/2;
         tasks.forEach((t, i) => {
             const sweep = (t.dur / totalMin) * Math.PI*2;
             ctx.beginPath(); ctx.moveTo(cx, cy);
             ctx.arc(cx, cy, r, curA, curA + sweep);
-            ctx.fillStyle = (dragIdx === i) ? '#f8f8f8' : colorPalette[i % colorPalette.length];
+            ctx.fillStyle = (dragIdx === i) ? '#f9f9f9' : colorPalette[i % colorPalette.length];
             ctx.fill();
-            ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2.5; ctx.stroke();
+            ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2; ctx.stroke();
             t.startA = curA; t.endA = curA + sweep;
             curA += sweep;
         });
 
-        // 원 테두리: 진한 회색(#444)으로 변경하여 검은색의 투박함 제거
+        // 원 전체 테두리: 검정색 제거 -> 부드러운 회색
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
-        ctx.strokeStyle = '#444444'; ctx.lineWidth = 2.5; ctx.stroke();
+        ctx.strokeStyle = '#dddddd'; ctx.lineWidth = 1.5; ctx.stroke();
 
-        // 현재 시각 침: 빨간색 대신 차분한 블루 톤(#5e6ad2) 적용
+        // 현재 시간 침: 빨간색 제거 -> 파스텔 핑크(var(--point-pastel))
         const now = new Date();
         const nowMin = now.getHours()*60 + now.getMinutes();
         if(nowMin >= startTime && nowMin <= endTime) {
             const angle = ((nowMin-startTime)/totalMin)*Math.PI*2 - Math.PI/2;
             ctx.beginPath(); ctx.moveTo(cx, cy);
             ctx.lineTo(cx+Math.cos(angle)*r, cy+Math.sin(angle)*r);
-            ctx.strokeStyle = '#5e6ad2'; ctx.lineWidth = 2.5; ctx.stroke();
+            ctx.strokeStyle = '#f4a7a7'; ctx.lineWidth = 2; ctx.stroke();
             
-            ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2);
-            ctx.fillStyle = '#5e6ad2'; ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2);
+            ctx.fillStyle = '#f4a7a7'; ctx.fill();
         }
 
-        if(mouse.overIdx === -1 && Math.sqrt((mouse.x-160)**2 + (mouse.y-160)**2) < 150) {
+        if(mouse.overIdx === -1 && Math.sqrt((mouse.x-130)**2 + (mouse.y-130)**2) < 120) {
             const used = tasks.reduce((s, t) => s + t.dur, 0);
             if(used < totalMin) {
-                ctx.fillStyle = "rgba(0,0,0,0.1)"; ctx.font = "32px Arial";
-                ctx.textAlign = "center"; ctx.fillText("+", mouse.x, mouse.y + 11);
+                ctx.fillStyle = "rgba(0,0,0,0.1)"; ctx.font = "28px Arial";
+                ctx.textAlign = "center"; ctx.fillText("+", mouse.x, mouse.y + 10);
             }
         }
         updateInfo(nowMin);
         requestAnimationFrame(render);
     }
 
-    // 마우스 이벤트 로직 (v7과 동일)
     canvas.addEventListener('mousemove', e => {
         const rect = canvas.getBoundingClientRect();
         mouse.x = e.clientX - rect.left; mouse.y = e.clientY - rect.top;
-        const dx = mouse.x - 160, dy = mouse.y - 160;
+        const dx = mouse.x - 130, dy = mouse.y - 130;
         let angle = Math.atan2(dy, dx);
         if(angle < -Math.PI/2) angle += Math.PI*2;
         mouse.overIdx = tasks.findIndex(t => angle >= t.startA && angle < t.endA);
@@ -220,10 +202,11 @@
             dragIdx = mouse.overIdx;
         }
     });
+
     canvas.addEventListener('mousedown', e => { startX = e.clientX; startY = e.clientY; if(mouse.overIdx !== -1) { dragIdx = mouse.overIdx; isDragging = true; } });
     window.addEventListener('mouseup', e => {
         const dist = Math.sqrt((e.clientX - startX)**2 + (e.clientY - startY)**2);
-        if(dist < 5 && Math.sqrt((mouse.x-160)**2 + (mouse.y-160)**2) < 150) openEdit(mouse.overIdx);
+        if(dist < 5 && Math.sqrt((mouse.x-130)**2 + (mouse.y-130)**2) < 120) openEdit(mouse.overIdx);
         isDragging = false; dragIdx = -1;
     });
 
@@ -236,6 +219,7 @@
         document.getElementById('task-in').value = idx === -1 ? "" : tasks[idx].name;
         document.getElementById('modal').style.display = 'block';
     }
+
     function handleSave() {
         const d = parseInt(document.getElementById('h-in').value)*60 + parseInt(document.getElementById('m-in').value);
         if(d <= 0) return;
@@ -245,6 +229,7 @@
     }
     function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); closeModal(); }
     function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
     function updateInfo(nowMin) {
         let cum = 0, found = false;
         tasks.forEach(t => {
