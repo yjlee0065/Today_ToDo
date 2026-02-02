@@ -2,50 +2,105 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Notion Planner Widget v6</title>
+    <title>Sophisticated Notion Planner</title>
     <style>
         :root { 
             --bg: #ffffff; 
-            --text: #37352f; 
-            --accent: #d44c47; 
-            --border: #e9e9e8;
+            --text-main: #37352f; 
+            --text-sub: #787774;
+            --accent: #eb5757; 
+            --border-light: #efefef;
+            --shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             display: flex; flex-direction: column; align-items: center; 
-            background: var(--bg); margin: 0; padding: 20px; user-select: none; color: var(--text);
+            background: var(--bg); margin: 0; padding: 30px; user-select: none; color: var(--text-main);
         }
-        #main-widget {
-            display: flex;
-            flex-direction: column; /* 세로 배치 강제 */
-            align-items: center;
+        
+        /* 메인 컨테이너 */
+        #main-widget { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        
+        #canvas-container { 
+            position: relative; 
+            width: 320px; height: 320px; 
+            margin-bottom: 40px;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));
         }
-        #canvas-container { position: relative; width: 320px; height: 320px; margin-bottom: 30px; }
         
-        /* 정보 패널: 원 아래에 위치 */
-        .info-panel { text-align: center; width: 100%; }
-        .current-time { color: var(--accent); font-weight: 700; font-size: 1.5rem; margin-bottom: 10px; }
-        .current-task { font-size: 1.3rem; color: var(--text); font-weight: 500; }
+        /* 정보 패널 디자인 */
+        .info-panel { 
+            text-align: center; 
+            padding: 10px 20px;
+            border-radius: 12px;
+            background: #fbfbfa;
+            border: 1px solid var(--border-light);
+            min-width: 240px;
+        }
+        .current-time { 
+            color: var(--accent); 
+            font-weight: 700; 
+            font-size: 1.4rem; 
+            letter-spacing: -0.02em;
+            margin-bottom: 6px; 
+        }
+        .current-task { 
+            font-size: 1.1rem; 
+            color: var(--text-main); 
+            font-weight: 500;
+            letter-spacing: -0.01em;
+        }
         
-        /* 모달 스타일 */
-        #modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 12px; box-shadow: 0 15px 50px rgba(0,0,0,0.15); z-index: 1000; width: 260px; border: 1px solid var(--border); }
-        .input-row { display: flex; justify-content: center; gap: 10px; margin: 15px 0; }
-        .num-ctrl { display: flex; flex-direction: column; align-items: center; }
-        .num-ctrl input { width: 60px; text-align: center; font-size: 1.1rem; padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
-        .arrow-btn { cursor: pointer; background: #f7f7f5; border: 1px solid var(--border); width: 40px; height: 30px; border-radius: 4px; margin: 2px; }
-        input[type="text"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 15px; }
-        .save-btn { width: 100%; background: #37352f; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-        #setup-screen { text-align: center; padding: 80px 20px; }
+        /* 모달: 더 얇고 깔끔하게 */
+        #modal { 
+            display: none; position: fixed; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); background: white; 
+            padding: 30px; border-radius: 16px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2); 
+            z-index: 1000; width: 280px; border: 1px solid var(--border-light); 
+        }
+        .input-row { display: flex; justify-content: center; gap: 15px; margin: 20px 0; }
+        .num-ctrl { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .num-ctrl input { 
+            width: 60px; text-align: center; font-size: 1.2rem; 
+            padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; 
+            background: #fafafa;
+        }
+        .arrow-btn { 
+            cursor: pointer; background: white; border: 1px solid #ddd; 
+            width: 44px; height: 32px; border-radius: 6px; 
+            transition: all 0.2s; color: #555;
+        }
+        .arrow-btn:hover { background: #f0f0f0; border-color: #bbb; }
+        
+        input[type="text"] { 
+            width: 100%; padding: 14px; box-sizing: border-box; 
+            border: 1px solid #e0e0e0; border-radius: 8px; 
+            margin-bottom: 20px; font-size: 1rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus { border-color: #acaba9; }
+        
+        .save-btn { 
+            width: 100%; background: #37352f; color: white; border: none; 
+            padding: 14px; border-radius: 8px; font-weight: 600; cursor: pointer; 
+            transition: opacity 0.2s;
+        }
+        .save-btn:hover { opacity: 0.9; }
+        
+        #setup-screen { text-align: center; padding-top: 100px; }
+        #setup-screen input { padding: 10px; border-radius: 6px; border: 1px solid #ddd; margin: 0 5px; }
     </style>
 </head>
 <body>
 
 <div id="setup-screen">
-    <h2>Daily Plan Range</h2>
-    <input type="time" id="start-time" value="09:00"> ~ 
+    <h2 style="font-weight: 700; color: #222; margin-bottom: 30px;">Plan Your Day</h2>
+    <input type="time" id="start-time" value="09:00"> 
+    <span style="color: #999;">to</span>
     <input type="time" id="end-time" value="21:00">
     <br><br>
-    <button class="save-btn" onclick="initChart()">시작하기</button>
+    <button class="save-btn" onclick="initChart()" style="width: auto; padding: 12px 30px;">Start Planning</button>
 </div>
 
 <div id="main-widget" style="display:none;">
@@ -54,44 +109,43 @@
     </div>
     <div class="info-panel">
         <div id="display-time" class="current-time">--:-- ~ --:--</div>
-        <div id="display-task" class="current-task">오늘의 일과를 등록해보세요!</div>
+        <div id="display-task" class="current-task">진행 중인 일과가 없습니다</div>
     </div>
 </div>
 
 <div id="modal">
-    <h3 id="modal-title" style="margin-top:0;">일과 편집</h3>
+    <h3 id="modal-title" style="margin: 0 0 10px 0; font-size: 1.2rem; text-align: center;">Edit Task</h3>
     <div class="input-row">
         <div class="num-ctrl">
             <button class="arrow-btn" onclick="adj(1,0)">▲</button>
             <input type="number" id="h-in" value="1">
             <button class="arrow-btn" onclick="adj(-1,0)">▼</button>
-            <small>시간</small>
+            <small style="color: #999; font-weight: 500;">Hours</small>
         </div>
         <div class="num-ctrl">
             <button class="arrow-btn" onclick="adj(0,15)">▲</button>
             <input type="number" id="m-in" value="0">
             <button class="arrow-btn" onclick="adj(0,-15)">▼</button>
-            <small>분</small>
+            <small style="color: #999; font-weight: 500;">Mins</small>
         </div>
     </div>
-    <input type="text" id="task-in" placeholder="할 일 입력">
-    <button class="save-btn" onclick="handleSave()">저장</button>
-    <button id="del-btn" onclick="deleteTask()" style="width:100%; background:none; border:none; color:var(--accent); margin-top:15px; cursor:pointer;">삭제</button>
-    <button onclick="closeModal()" style="width:100%; background:none; border:none; color:#888; margin-top:5px; cursor:pointer;">닫기</button>
+    <input type="text" id="task-in" placeholder="What's next?">
+    <button class="save-btn" onclick="handleSave()">Save Plan</button>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button id="del-btn" onclick="deleteTask()" style="flex: 1; background: none; border: none; color: #eb5757; cursor: pointer; font-size: 0.9rem;">Delete</button>
+        <button onclick="closeModal()" style="flex: 1; background: none; border: none; color: #999; cursor: pointer; font-size: 0.9rem;">Cancel</button>
+    </div>
 </div>
 
 <script>
     let startTime, endTime, totalMin;
     let tasks = [];
-    let editingIdx = -1;
-    let dragIdx = -1;
-    let isDragging = false;
-    let startX, startY;
+    let editingIdx = -1, dragIdx = -1, isDragging = false, startX, startY;
 
     const canvas = document.getElementById('plannerCanvas');
     const ctx = canvas.getContext('2d');
     
-    // 요청하신 색상 순환: 하늘 -> 분홍 -> 하늘 -> 연보라
+    // 요청하신 세련된 파스텔 순환: 하늘 -> 분홍 -> 하늘 -> 연보라
     const colorPalette = ['#D4E9F8', '#F0D7F1', '#D8F4FB', '#DDD4F0', '#D4DDF4', '#FFE0F0', '#E0F7FA', '#E8EAF6'];
     let mouse = { x: 0, y: 0, overIdx: -1 };
 
@@ -109,47 +163,62 @@
 
     function adj(h, m) {
         const hi = document.getElementById('h-in'), mi = document.getElementById('m-in');
-        let curH = parseInt(hi.value) + h, curM = parseInt(mi.value) + m;
-        if(curM >= 60) { curH++; curM = 0; } if(curM < 0) { curH--; curM = 45; }
-        const curDur = (curH * 60) + curM;
+        let cH = parseInt(hi.value) + h, cM = parseInt(mi.value) + m;
+        if(cM >= 60) { cH++; cM = 0; } if(cM < 0) { cH--; cM = 45; }
+        const cD = (cH * 60) + cM;
         const used = tasks.reduce((s, t, i) => s + (i === editingIdx ? 0 : t.dur), 0);
-        if(curDur > (totalMin - used)) return;
-        hi.value = Math.max(0, curH); mi.value = Math.max(0, curM);
+        if(cD > (totalMin - used)) return;
+        hi.value = Math.max(0, cH); mi.value = Math.max(0, cM);
     }
 
     function render() {
         ctx.clearRect(0,0,320,320);
-        const cx=160, cy=160, r=150;
+        const cx=160, cy=160, r=148;
         
+        // 메인 원 배경
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
-        ctx.fillStyle = '#fff'; ctx.fill();
-        ctx.strokeStyle = '#000'; ctx.lineWidth = 2.5; ctx.stroke();
+        ctx.fillStyle = '#ffffff'; ctx.fill();
+        ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1; ctx.stroke();
 
         let curA = -Math.PI/2;
         tasks.forEach((t, i) => {
             const sweep = (t.dur / totalMin) * Math.PI*2;
             ctx.beginPath(); ctx.moveTo(cx, cy);
             ctx.arc(cx, cy, r, curA, curA + sweep);
-            ctx.fillStyle = (dragIdx === i) ? 'rgba(0,0,0,0.05)' : colorPalette[i % colorPalette.length];
-            ctx.fill(); ctx.stroke();
+            ctx.fillStyle = (dragIdx === i) ? '#f5f5f5' : colorPalette[i % colorPalette.length];
+            ctx.fill();
+            
+            // 일과 사이의 구분선 (더 부드럽게)
+            ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2; ctx.stroke();
+            
             t.startA = curA; t.endA = curA + sweep;
             curA += sweep;
         });
 
+        // 원 전체 테두리 (마지막에 덮어씌움)
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+        ctx.strokeStyle = '#37352f'; ctx.lineWidth = 2.5; ctx.stroke();
+
+        // 빨간 시간 바늘 (더 얇고 세련되게)
         const now = new Date();
         const nowMin = now.getHours()*60 + now.getMinutes();
         if(nowMin >= startTime && nowMin <= endTime) {
             const angle = ((nowMin-startTime)/totalMin)*Math.PI*2 - Math.PI/2;
             ctx.beginPath(); ctx.moveTo(cx, cy);
             ctx.lineTo(cx+Math.cos(angle)*r, cy+Math.sin(angle)*r);
-            ctx.strokeStyle = '#d44c47'; ctx.lineWidth = 3; ctx.stroke();
+            ctx.strokeStyle = '#eb5757'; ctx.lineWidth = 2; ctx.stroke();
+            
+            // 중심점 포인트
+            ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2);
+            ctx.fillStyle = '#eb5757'; ctx.fill();
         }
 
+        // '+' 표시
         if(mouse.overIdx === -1 && Math.sqrt((mouse.x-160)**2 + (mouse.y-160)**2) < 150) {
             const used = tasks.reduce((s, t) => s + t.dur, 0);
             if(used < totalMin) {
-                ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.font = "30px Arial";
-                ctx.textAlign = "center"; ctx.fillText("+", mouse.x, mouse.y + 10);
+                ctx.fillStyle = "rgba(0,0,0,0.15)"; ctx.font = "32px Arial";
+                ctx.textAlign = "center"; ctx.fillText("+", mouse.x, mouse.y + 11);
             }
         }
         updateInfo(nowMin);
@@ -173,15 +242,15 @@
 
     canvas.addEventListener('mousedown', e => { startX = e.clientX; startY = e.clientY; if(mouse.overIdx !== -1) { dragIdx = mouse.overIdx; isDragging = true; } });
     window.addEventListener('mouseup', e => {
-        const distMoved = Math.sqrt((e.clientX - startX)**2 + (e.clientY - startY)**2);
-        if(distMoved < 5 && Math.sqrt((mouse.x-160)**2 + (mouse.y-160)**2) < 150) openEdit(mouse.overIdx);
+        const dist = Math.sqrt((e.clientX - startX)**2 + (e.clientY - startY)**2);
+        if(dist < 5 && Math.sqrt((mouse.x-160)**2 + (mouse.y-160)**2) < 150) openEdit(mouse.overIdx);
         isDragging = false; dragIdx = -1;
     });
 
     function openEdit(idx) {
         editingIdx = idx;
-        document.getElementById('modal-title').innerText = idx === -1 ? "새 일과 추가" : "일과 수정";
-        document.getElementById('del-btn').style.display = idx === -1 ? "none" : "block";
+        document.getElementById('modal-title').innerText = idx === -1 ? "New Task" : "Edit Task";
+        document.getElementById('del-btn').style.visibility = idx === -1 ? "hidden" : "visible";
         document.getElementById('h-in').value = idx === -1 ? 1 : Math.floor(tasks[idx].dur/60);
         document.getElementById('m-in').value = idx === -1 ? 0 : tasks[idx].dur%60;
         document.getElementById('task-in').value = idx === -1 ? "" : tasks[idx].name;
@@ -189,10 +258,10 @@
     }
 
     function handleSave() {
-        const dur = parseInt(document.getElementById('h-in').value)*60 + parseInt(document.getElementById('m-in').value);
-        if(dur <= 0) return;
-        const name = document.getElementById('task-in').value || "일과";
-        if(editingIdx > -1) tasks[editingIdx] = { dur, name }; else tasks.push({ dur, name });
+        const d = parseInt(document.getElementById('h-in').value)*60 + parseInt(document.getElementById('m-in').value);
+        if(d <= 0) return;
+        const n = document.getElementById('task-in').value || "Doing something";
+        if(editingIdx > -1) tasks[editingIdx] = { dur: d, name: n }; else tasks.push({ dur: d, name: n });
         closeModal();
     }
     function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); closeModal(); }
@@ -211,7 +280,7 @@
         });
         if(!found) {
             document.getElementById('display-time').innerText = "--:-- ~ --:--";
-            document.getElementById('display-task').innerText = "일과가 없습니다.";
+            document.getElementById('display-task').innerText = "일과가 없습니다";
         }
     }
     function fmt(m) { return `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
