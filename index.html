@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion Daily Planner Widget</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --accent-color: #eb5757;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+        }
+        #canvas-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+        }
+        canvas {
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .info-panel {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .current-task-time {
+            color: var(--accent-color);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        .current-task-name {
+            font-size: 1.1rem;
+            color: var(--text-color);
+        }
+        /* 모달 스타일 */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 100;
+            width: 250px;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .number-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .number-input input {
+            width: 50px;
+            text-align: center;
+            font-size: 1.2rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            cursor: pointer;
+            background: #f0f0f0;
+            border: none;
+            padding: 2px 10px;
+            border-radius: 4px;
+        }
+        .save-btn {
+            width: 100%;
+            background: #2eaadc;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="setup-screen">
+    <h3>전체 운영 시간 설정</h3>
+    <input type="time" id="start-time" value="09:00"> 부터
+    <input type="time" id="end-time" value="21:00"> 까지
+    <button onclick="initChart()">시작하기</button>
+</div>
+
+<div id="main-widget" style="display:none;">
+    <div id="canvas-container">
+        <canvas id="plannerCanvas" width="300" height="300"></canvas>
+    </div>
+    <div class="info-panel">
+        <div id="display-time" class="current-task-time">00:00 ~ 00:00</div>
+        <div id="display-task" class="current-task-name">현재 진행 중인 일과가 없습니다.</div>
+    </div>
+</div>
+
+<div id="modal">
+    <h4 id="modal-title">새 일과 추가</h4>
+    <div class="input-group">
+        <div class="number-input">
+            <button class="btn" onclick="adjustTime('h', 1)">▲</button>
+            <input type="number" id="input-h" value="1">
+            <button class="btn" onclick="adjustTime('h', -1)">▼</button>
+            <span>시간</span>
+        </div>
+        <div class="number-input">
+            <button class="btn" onclick="adjustTime('m', 15)">▲</button>
+            <input type="number" id="input-m" value="0">
+            <button class="btn" onclick="adjustTime('m', -15)">▼</button>
+            <span>분</span>
+        </div>
+    </div>
+    <input type="text" id="input-task" placeholder="할 일 입력" style="width:90%; margin-bottom:15px; padding:5px;">
+    <button class="save-btn" onclick="saveTask()">저장하기</button>
+    <button onclick="closeModal()" style="background:none; border:none; color:gray; cursor:pointer; margin-top:10px;">취소</button>
+</div>
+
+<script>
+    let startTime, endTime, totalMinutes;
+    let tasks = [];
+    const canvas = document.getElementById('plannerCanvas');
+    const ctx = canvas.getContext('2d');
+    let isHoveringEmpty = false;
+    let mousePos = { x: 0, y: 0 };
+
+    const colors = ['#C5B4E3', '#A0E7E5', '#FBE7C6', '#FFAEBC', '#B4F8C8'];
+
+    function initChart() {
+        const s = document.getElementById('start-time').value.split(':');
+        const e = document.getElementById('end-time').value.split(':');
+        startTime = parseInt(s[0]) * 60 + parseInt(s[1]);
+        endTime = parseInt(e[0]) * 60 + parseInt(e[1]);
+        
+        if(endTime <= startTime) endTime += 1440; // 다음날 처리
+        totalMinutes = endTime - startTime;
+
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('main-widget').style.display = 'flex';
+        render();
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = 140;
+
+        // 배경 원
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // 일과 그리기
+        let currentAngle = -Math.PI / 2;
+        tasks.forEach((task, index) => {
+            const sliceAngle = (task.duration / totalMinutes) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+            ctx.fillStyle = colors[index % colors.length];
+            ctx.fill();
+            ctx.stroke();
+            
+            task.startAngle = currentAngle;
+            task.endAngle = currentAngle + sliceAngle;
+            currentAngle += sliceAngle;
+        });
+
+        // 현재 시간 바늘
+        drawTimeHand(centerX, centerY, radius);
+
+        // 마우스 오버 시 '+' 표시
+        if (isHoveringEmpty) {
+            ctx.font = "40px Arial";
+            ctx.fillStyle = "rgba(200, 200, 200, 0.8)";
+            ctx.textAlign = "center";
+            ctx.fillText("+", centerX, centerY + 15);
+        }
+
+        updateInfoPanel();
+        requestAnimationFrame(render);
+    }
+
+    function drawTimeHand(cx, cy, r) {
+        const now = new Date();
+        const currentTotal = now.getHours() * 60 + now.getMinutes();
+        
+        if (currentTotal >= startTime && currentTotal <= endTime) {
+            const elapsed = currentTotal - startTime;
+            const angle = (elapsed / totalMinutes) * Math.PI * 2 - Math.PI / 2;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    // 시간 조절 로직 (1시간 / 15분 단위)
+    function adjustTime(type, amt) {
+        const hInput = document.getElementById('input-h');
+        const mInput = document.getElementById('input-m');
+        let h = parseInt(hInput.value);
+        let m = parseInt(mInput.value);
+
+        if(type === 'h') h += amt;
+        else m += amt;
+
+        if(m >= 60) { h++; m = 0; }
+        if(m < 0) { h--; m = 45; }
+        if(h < 0) h = 0;
+
+        // 총 시간 초과 체크
+        const currentUsed = tasks.reduce((sum, t) => sum + t.duration, 0);
+        if ((h * 60 + m) > (totalMinutes - currentUsed)) {
+            alert("총 설정 시간을 초과할 수 없습니다!");
+            return;
+        }
+
+        hInput.value = h;
+        mInput.value = m;
+    }
+
+    function saveTask() {
+        const h = parseInt(document.getElementById('input-h').value);
+        const m = parseInt(document.getElementById('input-m').value);
+        const duration = h * 60 + m;
+        const name = document.getElementById('input-task').value || "새 일과";
+
+        tasks.push({ duration, name });
+        closeModal();
+    }
+
+    function updateInfoPanel() {
+        const now = new Date();
+        const currentTotal = now.getHours() * 60 + now.getMinutes();
+        let elapsed = currentTotal - startTime;
+        
+        let cumulative = 0;
+        let found = false;
+        
+        tasks.forEach(task => {
+            if (elapsed >= cumulative && elapsed < cumulative + task.duration) {
+                const sH = Math.floor((startTime + cumulative) / 60) % 24;
+                const sM = (startTime + cumulative) % 60;
+                const eH = Math.floor((startTime + cumulative + task.duration) / 60) % 24;
+                const eM = (startTime + cumulative + task.duration) % 60;
+                
+                document.getElementById('display-time').innerText = 
+                    `${String(sH).padStart(2,'0')}:${String(sM).padStart(2,'0')} ~ ${String(eH).padStart(2,'0')}:${String(eM).padStart(2,'0')}`;
+                document.getElementById('display-task').innerText = task.name;
+                found = true;
+            }
+            cumulative += task.duration;
+        });
+
+        if(!found) {
+            document.getElementById('display-time').innerText = "--:-- ~ --:--";
+            document.getElementById('display-task').innerText = "진행 중인 일과 없음";
+        }
+    }
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mousePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        const dist = Math.sqrt((mousePos.x - 150)**2 + (mousePos.y - 150)**2);
+        
+        const usedMinutes = tasks.reduce((sum, t) => sum + t.duration, 0);
+        isHoveringEmpty = (dist < 140 && usedMinutes < totalMinutes);
+    });
+
+    canvas.addEventListener('click', () => {
+        if(isHoveringEmpty) {
+            document.getElementById('modal').style.display = 'block';
+        }
+    });
+
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+</script>
+</body>
+</html>
