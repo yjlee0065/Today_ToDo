@@ -2,32 +2,46 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Notion Planner Widget v4</title>
+    <title>Notion Planner Widget v5</title>
     <style>
-        :root { --bg: #ffffff; --text: #333; --accent: #d44c47; }
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: var(--bg); margin: 0; padding: 20px; user-select: none; }
-        #canvas-container { position: relative; width: 320px; height: 320px; }
-        canvas { border-radius: 50%; cursor: pointer; }
-        .info-panel { margin-top: 25px; text-align: center; min-height: 80px; }
-        .current-time { color: var(--accent); font-weight: bold; font-size: 1.4rem; margin-bottom: 8px; }
-        .current-task { font-size: 1.2rem; color: var(--text); font-weight: 500; }
+        :root { 
+            --bg: #ffffff; 
+            --text: #37352f; /* 노션 기본 텍스트 색상 */
+            --accent: #d44c47; 
+            --border: #e9e9e8;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif; 
+            display: flex; flex-direction: column; align-items: center; 
+            background: var(--bg); margin: 0; padding: 20px; user-select: none; color: var(--text);
+        }
+        #canvas-container { position: relative; width: 320px; height: 320px; margin-bottom: 20px; }
+        canvas { cursor: pointer; }
         
-        #modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 1000; width: 260px; }
+        /* 정보 패널 레이아웃 (원 아래 배치) */
+        .info-panel { text-align: center; width: 100%; max-width: 320px; }
+        .current-time { color: var(--accent); font-weight: 600; font-size: 1.3rem; margin-bottom: 4px; }
+        .current-task { font-size: 1.15rem; color: var(--text); font-weight: 400; opacity: 0.9; }
+        
+        /* 모달 및 입력 UI */
+        #modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 12px; box-shadow: 0 15px 50px rgba(0,0,0,0.1); z-index: 1000; width: 260px; border: 1px solid var(--border); }
         .input-row { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
         .num-ctrl { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .num-ctrl input { width: 55px; text-align: center; font-size: 1.1rem; padding: 5px; border: 1px solid #ddd; border-radius: 5px; }
-        .arrow-btn { cursor: pointer; background: #f5f5f5; border: 1px solid #ddd; width: 35px; height: 30px; border-radius: 4px; font-weight: bold; }
-        input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
-        .save-btn { width: 100%; background: #333; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        #setup-screen { text-align: center; padding: 50px; }
+        .num-ctrl input { width: 55px; text-align: center; font-size: 1.1rem; padding: 8px; border: 1px solid var(--border); border-radius: 6px; outline: none; }
+        .arrow-btn { cursor: pointer; background: #f7f7f5; border: 1px solid var(--border); width: 35px; height: 30px; border-radius: 4px; font-weight: bold; color: #666; }
+        .arrow-btn:hover { background: #efefed; }
+        input[type="text"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 15px; outline: none; }
+        .save-btn { width: 100%; background: #37352f; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        #setup-screen { text-align: center; padding: 60px 20px; }
+        .setup-input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin: 0 5px; }
     </style>
 </head>
 <body>
 
 <div id="setup-screen">
-    <h2>전체 시간 범위 설정</h2>
-    <input type="time" id="start-time" value="09:00"> ~ 
-    <input type="time" id="end-time" value="21:00">
+    <h2 style="font-weight: 600;">Daily Routine Range</h2>
+    <input type="time" id="start-time" value="09:00" class="setup-input"> ~ 
+    <input type="time" id="end-time" value="21:00" class="setup-input">
     <br><br>
     <button class="save-btn" onclick="initChart()">위젯 생성하기</button>
 </div>
@@ -38,30 +52,30 @@
     </div>
     <div class="info-panel">
         <div id="display-time" class="current-time">--:-- ~ --:--</div>
-        <div id="display-task" class="current-task">현재 일과가 없습니다.</div>
+        <div id="display-task" class="current-task">현재 진행 중인 일과가 없습니다.</div>
     </div>
 </div>
 
 <div id="modal">
-    <h3 id="modal-title" style="margin-top:0;">일과 편집</h3>
+    <h3 id="modal-title" style="margin-top:0; font-size: 1.1rem;">일과 편집</h3>
     <div class="input-row">
         <div class="num-ctrl">
             <button class="arrow-btn" onclick="adj(1,0)">▲</button>
             <input type="number" id="h-in" value="1">
             <button class="arrow-btn" onclick="adj(-1,0)">▼</button>
-            <small>시간</small>
+            <small style="color: #888;">시간</small>
         </div>
         <div class="num-ctrl">
             <button class="arrow-btn" onclick="adj(0,15)">▲</button>
             <input type="number" id="m-in" value="0">
             <button class="arrow-btn" onclick="adj(0,-15)">▼</button>
-            <small>분</small>
+            <small style="color: #888;">분</small>
         </div>
     </div>
-    <input type="text" id="task-in" placeholder="할 일을 입력하세요">
+    <input type="text" id="task-in" placeholder="무엇을 하실 건가요?">
     <button class="save-btn" onclick="handleSave()">저장</button>
-    <button id="del-btn" onclick="deleteTask()" style="width:100%; background:none; border:none; color:#d44c47; margin-top:10px; cursor:pointer;">삭제하기</button>
-    <button onclick="closeModal()" style="width:100%; background:none; border:none; color:#888; margin-top:5px; cursor:pointer;">취소</button>
+    <button id="del-btn" onclick="deleteTask()" style="width:100%; background:none; border:none; color:var(--accent); margin-top:12px; cursor:pointer; font-size: 0.85rem;">일과 삭제하기</button>
+    <button onclick="closeModal()" style="width:100%; background:none; border:none; color:#888; margin-top:5px; cursor:pointer; font-size: 0.85rem;">닫기</button>
 </div>
 
 <script>
@@ -70,11 +84,13 @@
     let editingIdx = -1;
     let dragIdx = -1;
     let isDragging = false;
-    let startX, startY; // 클릭 위치 기록용
-    
+    let startX, startY;
+
     const canvas = document.getElementById('plannerCanvas');
     const ctx = canvas.getContext('2d');
-    const colors = ['#C5B4E3', '#B2E2E2', '#F9E4B7', '#F8BBD0', '#C8E6C9', '#FFE082', '#A1887F'];
+    
+    // 보내주신 팔레트 색상 반영 + 범주 안의 확장 색상
+    const colors = ['#D4DDF4', '#D4E9F8', '#D8F4FB', '#DDD4F0', '#F0D7F1', '#E1F5FE', '#F3E5F5', '#E8EAF6'];
     let mouse = { x: 0, y: 0, overIdx: -1 };
 
     function initChart() {
@@ -95,29 +111,30 @@
         if(curM >= 60) { curH++; curM = 0; } if(curM < 0) { curH--; curM = 45; }
         const curDur = (curH * 60) + curM;
         const used = tasks.reduce((s, t, i) => s + (i === editingIdx ? 0 : t.dur), 0);
-        if(curDur > (totalMin - used)) { alert("전체 시간을 초과했습니다!"); return; }
+        if(curDur > (totalMin - used)) return;
         hi.value = Math.max(0, curH); mi.value = Math.max(0, curM);
     }
 
     function render() {
         ctx.clearRect(0,0,320,320);
-        const cx=160, cy=160, r=145;
+        const cx=160, cy=160, r=150;
         
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
         ctx.fillStyle = '#fff'; ctx.fill();
-        ctx.strokeStyle = '#333'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 2.5; ctx.stroke();
 
         let curA = -Math.PI/2;
         tasks.forEach((t, i) => {
             const sweep = (t.dur / totalMin) * Math.PI*2;
             ctx.beginPath(); ctx.moveTo(cx, cy);
             ctx.arc(cx, cy, r, curA, curA + sweep);
-            ctx.fillStyle = (dragIdx === i) ? '#f0f0f0' : colors[i % colors.length];
+            ctx.fillStyle = (dragIdx === i) ? 'rgba(0,0,0,0.05)' : colors[i % colors.length];
             ctx.fill(); ctx.stroke();
             t.startA = curA; t.endA = curA + sweep;
             curA += sweep;
         });
 
+        // 현재 시각 바늘
         const now = new Date();
         const nowMin = now.getHours()*60 + now.getMinutes();
         if(nowMin >= startTime && nowMin <= endTime) {
@@ -127,10 +144,11 @@
             ctx.strokeStyle = '#d44c47'; ctx.lineWidth = 3; ctx.stroke();
         }
 
-        if(mouse.overIdx === -1 && isInsideCircle(mouse.x, mouse.y)) {
+        // '+' 표시
+        if(mouse.overIdx === -1 && Math.sqrt((mouse.x-160)**2 + (mouse.y-160)**2) < 150) {
             const used = tasks.reduce((s, t) => s + t.dur, 0);
             if(used < totalMin) {
-                ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.font = "bold 30px Arial";
+                ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.font = "30px Arial";
                 ctx.textAlign = "center"; ctx.fillText("+", mouse.x, mouse.y + 10);
             }
         }
@@ -138,52 +156,34 @@
         requestAnimationFrame(render);
     }
 
-    function isInsideCircle(x, y) { return Math.sqrt((x-160)**2 + (y-160)**2) < 145; }
-
     canvas.addEventListener('mousemove', e => {
         const rect = canvas.getBoundingClientRect();
         mouse.x = e.clientX - rect.left; mouse.y = e.clientY - rect.top;
         const dx = mouse.x - 160, dy = mouse.y - 160;
         let angle = Math.atan2(dy, dx);
         if(angle < -Math.PI/2) angle += Math.PI*2;
-        
         mouse.overIdx = tasks.findIndex(t => angle >= t.startA && angle < t.endA);
         
-        if(isDragging && dragIdx !== -1) {
-            if(mouse.overIdx !== -1 && mouse.overIdx !== dragIdx) {
-                const item = tasks.splice(dragIdx, 1)[0];
-                tasks.splice(mouse.overIdx, 0, item);
-                dragIdx = mouse.overIdx;
-            }
+        if(isDragging && dragIdx !== -1 && mouse.overIdx !== -1 && mouse.overIdx !== dragIdx) {
+            const item = tasks.splice(dragIdx, 1)[0];
+            tasks.splice(mouse.overIdx, 0, item);
+            dragIdx = mouse.overIdx;
         }
     });
 
     canvas.addEventListener('mousedown', e => {
-        if(!isInsideCircle(mouse.x, mouse.y)) return;
         startX = e.clientX; startY = e.clientY;
-        if(mouse.overIdx !== -1) {
-            dragIdx = mouse.overIdx;
-            isDragging = true;
-        }
+        if(mouse.overIdx !== -1) { dragIdx = mouse.overIdx; isDragging = true; }
     });
 
     window.addEventListener('mouseup', e => {
-        if(!isInsideCircle(mouse.x, mouse.y) && !isDragging) return;
-        
-        // 이동 거리가 적으면 '클릭'으로 간주하여 모달 오픈
         const distMoved = Math.sqrt((e.clientX - startX)**2 + (e.clientY - startY)**2);
-        if(distMoved < 5) {
-            openEdit(mouse.overIdx);
-        }
-
+        if(distMoved < 5 && Math.sqrt((mouse.x-160)**2 + (mouse.y-160)**2) < 150) openEdit(mouse.overIdx);
         isDragging = false; dragIdx = -1;
     });
 
     function openEdit(idx) {
         editingIdx = idx;
-        const used = tasks.reduce((s, t, i) => s + (i === editingIdx ? 0 : t.dur), 0);
-        if(idx === -1 && used >= totalMin) return;
-
         document.getElementById('modal-title').innerText = idx === -1 ? "새 일과 추가" : "일과 수정";
         document.getElementById('del-btn').style.display = idx === -1 ? "none" : "block";
         document.getElementById('h-in').value = idx === -1 ? 1 : Math.floor(tasks[idx].dur/60);
@@ -193,16 +193,13 @@
     }
 
     function handleSave() {
-        const h = parseInt(document.getElementById('h-in').value);
-        const m = parseInt(document.getElementById('m-in').value);
-        const dur = (h * 60) + m;
+        const dur = parseInt(document.getElementById('h-in').value)*60 + parseInt(document.getElementById('m-in').value);
         if(dur <= 0) return;
-        const name = document.getElementById('task-in').value || "할 일";
+        const name = document.getElementById('task-in').value || "일과";
         if(editingIdx > -1) tasks[editingIdx] = { dur, name };
         else tasks.push({ dur, name });
         closeModal();
     }
-
     function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); closeModal(); }
     function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
@@ -219,7 +216,7 @@
         });
         if(!found) {
             document.getElementById('display-time').innerText = "--:-- ~ --:--";
-            document.getElementById('display-task').innerText = "일과 없음";
+            document.getElementById('display-task').innerText = "현재 일과가 없습니다.";
         }
     }
     function fmt(m) { return `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
