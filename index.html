@@ -56,7 +56,6 @@
         .input-row { display: flex; justify-content: center; gap: 8px; margin: 15px 0; }
         select { padding: 8px; border-radius: 6px; border: 1px solid #ddd; outline: none; background: #fff; }
         
-        /* 시작 화면 드롭다운 스타일 */
         .setup-row { display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 15px; font-weight: bold; }
         .setup-row select { width: 65px; padding: 5px; }
 
@@ -69,21 +68,18 @@
 
 <div id="setup-screen">
     <h2 style="color: #555; margin-bottom: 25px;">Today To-Do</h2>
-    
     <div class="setup-row">
         <span>시작</span>
         <select id="start-ampm"><option value="0">오전</option><option value="12" selected>오후</option></select>
         <select id="start-h"></select>
         <select id="start-m"></select>
     </div>
-    
     <div class="setup-row">
         <span>종료</span>
         <select id="end-ampm"><option value="0">오전</option><option value="12" selected>오후</option></select>
         <select id="end-h"></select>
         <select id="end-m"></select>
     </div>
-
     <button class="save-btn" onclick="initChart()" style="width: auto; padding: 10px 30px; background: var(--accent-mint); color: #333; margin-top: 10px;">Start Planning</button>
 </div>
 
@@ -129,53 +125,68 @@
     const colorPalette = ['#D4DDF4', '#D4E9F8', '#D8F4FB', '#DDD4F0', '#F0D7F1'];
     let mouse = { x: 0, y: 0, overIdx: -1 };
 
-    // 시작 화면 드롭다운 옵션 생성
     function populateSetupSelects() {
         const hSelects = [document.getElementById('start-h'), document.getElementById('end-h')];
         const mSelects = [document.getElementById('start-m'), document.getElementById('end-m')];
-        
         hSelects.forEach(s => {
             for(let i=1; i<=12; i++) {
                 let opt = document.createElement('option');
-                opt.value = (i === 12) ? 0 : i; // 12시는 계산 시 0으로 처리 (오전/오후 합산용)
+                opt.value = (i === 12) ? 0 : i;
                 opt.text = String(i).padStart(2, '0');
                 if(i === 9 && s.id === 'start-h') opt.selected = true;
                 if(i === 9 && s.id === 'end-h') opt.selected = true;
                 s.add(opt);
             }
         });
-
         mSelects.forEach(s => {
             for(let i=0; i<60; i+=5) {
                 let opt = document.createElement('option');
-                opt.value = i;
-                opt.text = String(i).padStart(2, '0');
+                opt.value = i; opt.text = String(i).padStart(2, '0');
                 s.add(opt);
             }
         });
     }
-    populateSetupSelects();
+
+    // 로컬 스토리지 저장 기능
+    function saveToLocal() {
+        const data = { startTime, endTime, totalMin, tasks };
+        localStorage.setItem('todayTodoData', JSON.stringify(data));
+    }
+
+    // 로컬 스토리지 로드 기능
+    function loadFromLocal() {
+        const saved = localStorage.getItem('todayTodoData');
+        if (saved) {
+            const data = JSON.parse(saved);
+            startTime = data.startTime;
+            endTime = data.endTime;
+            totalMin = data.totalMin;
+            tasks = data.tasks;
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('main-widget').style.display = 'flex';
+            render();
+        }
+    }
 
     function initChart() {
         const sh = (parseInt(document.getElementById('start-h').value) + parseInt(document.getElementById('start-ampm').value));
         const sm = parseInt(document.getElementById('start-m').value);
         const eh = (parseInt(document.getElementById('end-h').value) + parseInt(document.getElementById('end-ampm').value));
         const em = parseInt(document.getElementById('end-m').value);
-
         startTime = sh * 60 + sm;
         endTime = eh * 60 + em;
-        
         if(endTime <= startTime) endTime += 1440;
         totalMin = endTime - startTime;
-
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('main-widget').style.display = 'flex';
+        saveToLocal();
         render();
     }
 
     function resetWidget() {
         if(confirm("모든 일과가 초기화됩니다. 다시 설정하시겠습니까?")) {
             tasks = [];
+            localStorage.removeItem('todayTodoData'); // 저장 데이터 삭제
             document.getElementById('setup-screen').style.display = 'block';
             document.getElementById('main-widget').style.display = 'none';
         }
@@ -186,7 +197,6 @@
         const cx=100, cy=100, r=95;
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
         ctx.fillStyle = '#fff'; ctx.fill();
-
         let curA = -Math.PI/2;
         tasks.forEach((t, i) => {
             const sweep = (t.dur / totalMin) * Math.PI*2;
@@ -198,13 +208,10 @@
             t.startA = curA; t.endA = curA + sweep;
             curA += sweep;
         });
-
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke();
-
         const now = new Date(), nowMin = now.getHours()*60 + now.getMinutes();
         const relativeNow = (nowMin < startTime && endTime > 1440) ? nowMin + 1440 : nowMin;
-
         if(relativeNow >= startTime && relativeNow <= endTime) {
             const angle = ((relativeNow-startTime)/totalMin)*Math.PI*2 - Math.PI/2;
             ctx.beginPath(); ctx.moveTo(cx, cy);
@@ -213,7 +220,6 @@
             ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2);
             ctx.fillStyle = '#B2DFDB'; ctx.fill();
         }
-
         if(mouse.overIdx === -1 && Math.sqrt((mouse.x-100)**2 + (mouse.y-100)**2) < 95) {
             if(tasks.reduce((s,t)=>s+t.dur,0) < totalMin) {
                 ctx.fillStyle = "rgba(178, 223, 219, 0.4)"; ctx.font = "bold 24px sans-serif";
@@ -232,6 +238,7 @@
         mouse.overIdx = tasks.findIndex(t => angle >= t.startA && angle < t.endA);
         if(isDragging && dragIdx !== -1 && mouse.overIdx !== -1 && mouse.overIdx !== dragIdx) {
             const item = tasks.splice(dragIdx, 1)[0]; tasks.splice(mouse.overIdx, 0, item); dragIdx = mouse.overIdx;
+            saveToLocal(); // 순서 바뀔 때 저장
         }
     });
 
@@ -260,9 +267,10 @@
         if(d > (totalMin - used)) { alert("시간 초과!"); return; }
         const n = document.getElementById('task-in').value || "일과";
         if(editingIdx > -1) tasks[editingIdx] = { dur: d, name: n }; else tasks.push({ dur: d, name: n });
+        saveToLocal(); // 저장
         closeModal();
     }
-    function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); closeModal(); }
+    function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); saveToLocal(); closeModal(); }
     function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
     function updateInfo(m) {
@@ -291,6 +299,10 @@
         if (taskEl.offsetWidth > container.offsetWidth) { taskEl.classList.add('scrolling'); }
     }
     function fmt(m) { return `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
+
+    // 초기화
+    populateSetupSelects();
+    loadFromLocal(); // 페이지 로드 시 저장된 데이터 불러오기
 </script>
 </body>
 </html>
