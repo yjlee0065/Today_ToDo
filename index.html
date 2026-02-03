@@ -19,96 +19,72 @@
         #main-widget { display: flex; flex-direction: column; align-items: center; width: 100%; position: relative; }
         
         #reset-btn {
-            position: absolute;
-            top: -10px;
-            left: 0; 
-            background: none;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: #787774;
-            transition: color 0.2s;
+            position: absolute; top: -10px; left: 0; 
+            background: none; border: none; padding: 4px 8px;
+            font-size: 1.2rem; cursor: pointer; color: #787774;
             line-height: 1;
         }
-        #reset-btn:hover { color: var(--text-main); }
 
         #canvas-container { 
-            position: relative; 
-            width: 200px; height: 200px; 
-            margin-bottom: 25px;
-            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
+            position: relative; width: 200px; height: 200px; 
+            margin-bottom: 25px; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
         }
         
         .info-panel { 
-            text-align: center; 
-            padding: 10px 15px;
-            border-radius: 12px;
-            background: #ffffff;
-            border: 1px solid var(--border-soft);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            width: 170px;
-            overflow: hidden;
+            text-align: center; padding: 10px 15px; border-radius: 12px;
+            background: #ffffff; border: 1px solid var(--border-soft);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); width: 170px; overflow: hidden;
         }
         
         .current-time { 
-            color: var(--accent-mint); 
-            font-weight: 800; 
-            font-size: 1.2rem; 
-            display: inline-block;
-            margin-bottom: 4px; 
-            white-space: nowrap;
+            color: var(--accent-mint); font-weight: 800; font-size: 1.2rem; 
+            display: inline-block; margin-bottom: 4px; white-space: nowrap;
         }
 
-        .marquee-container {
-            width: 100%;
-            overflow: hidden;
-            white-space: nowrap;
-            position: relative;
-        }
+        .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; position: relative; }
+        .current-task { display: inline-block; font-size: 0.95rem; color: var(--text-gray); font-weight: 700; }
 
-        /* 일과 제목: 굵게 하고 크기를 살짝 줄임 */
-        .current-task { 
-            display: inline-block;
-            font-size: 0.95rem; /* 1rem -> 0.95rem */
-            color: var(--text-gray); 
-            font-weight: 700; /* 500 -> 700 */
-        }
-
-        .scrolling {
-            display: inline-block;
-            padding-left: 100%;
-            animation: marquee 7s linear infinite;
-        }
-
-        @keyframes marquee {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
+        .scrolling { display: inline-block; padding-left: 100%; animation: marquee 7s linear infinite; }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
         #modal { 
             display: none; position: fixed; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); background: white; 
-            padding: 20px; border-radius: 12px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15); 
+            padding: 20px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); 
             z-index: 1000; width: 230px; border: 1px solid var(--border-soft); 
         }
         .input-row { display: flex; justify-content: center; gap: 8px; margin: 15px 0; }
-        select { padding: 8px; border-radius: 6px; border: 1px solid #ddd; outline: none; background: #fff; width: 85px; }
+        select { padding: 8px; border-radius: 6px; border: 1px solid #ddd; outline: none; background: #fff; }
+        
+        /* 시작 화면 드롭다운 스타일 */
+        .setup-row { display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 15px; font-weight: bold; }
+        .setup-row select { width: 65px; padding: 5px; }
+
         input[type="text"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; font-size: 0.95rem; outline: none; }
         .save-btn { width: 100%; background: #444; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        #setup-screen { text-align: center; padding-top: 60px; }
+        #setup-screen { text-align: center; padding-top: 40px; }
     </style>
 </head>
 <body>
 
 <div id="setup-screen">
     <h2 style="color: #555; margin-bottom: 25px;">Today To-Do</h2>
-    <div style="margin-bottom: 20px;">
-        <input type="time" id="start-time" value="09:00"> ~ <input type="time" id="end-time" value="21:00">
+    
+    <div class="setup-row">
+        <span>시작</span>
+        <select id="start-ampm"><option value="0">오전</option><option value="12" selected>오후</option></select>
+        <select id="start-h"></select>
+        <select id="start-m"></select>
     </div>
-    <button class="save-btn" onclick="initChart()" style="width: auto; padding: 10px 30px; background: var(--accent-mint); color: #333;">Start Planning</button>
+    
+    <div class="setup-row">
+        <span>종료</span>
+        <select id="end-ampm"><option value="0">오전</option><option value="12" selected>오후</option></select>
+        <select id="end-h"></select>
+        <select id="end-m"></select>
+    </div>
+
+    <button class="save-btn" onclick="initChart()" style="width: auto; padding: 10px 30px; background: var(--accent-mint); color: #333; margin-top: 10px;">Start Planning</button>
 </div>
 
 <div id="main-widget" style="display:none;">
@@ -127,34 +103,16 @@
 <div id="modal">
     <h4 style="margin: 0 0 15px 0; text-align: center;">일과 설정</h4>
     <div class="input-row">
-        <select id="h-select">
+        <select id="h-select" style="width: 85px;">
             <option value="0" selected>0h</option> 
-            <option value="1">1h</option>
-            <option value="2">2h</option>
-            <option value="3">3h</option>
-            <option value="4">4h</option>
-            <option value="5">5h</option>
-            <option value="6">6h</option>
-            <option value="7">7h</option>
-            <option value="8">8h</option>
-            <option value="9">9h</option>
-            <option value="10">10h</option>
-            <option value="11">11h</option>
-            <option value="12">12h</option>
+            <option value="1">1h</option><option value="2">2h</option><option value="3">3h</option><option value="4">4h</option>
+            <option value="5">5h</option><option value="6">6h</option><option value="7">7h</option><option value="8">8h</option>
         </select>
-        <select id="m-select">
+        <select id="m-select" style="width: 85px;">
             <option value="0" selected>0m</option>
-            <option value="5">5m</option>
-            <option value="10">10m</option>
             <option value="15">15m</option>
-            <option value="20">20m</option>
-            <option value="25">25m</option>
             <option value="30">30m</option>
-            <option value="35">35m</option>
-            <option value="40">40m</option>
             <option value="45">45m</option>
-            <option value="50">50m</option>
-            <option value="55">55m</option>
         </select>
     </div>
     <input type="text" id="task-in" placeholder="할 일 입력">
@@ -166,17 +124,50 @@
 </div>
 
 <script>
-    // JS 로직은 이전과 동일하며 openEdit 시 기본값 0h만 확실히 유지됩니다.
     let startTime, endTime, totalMin, tasks = [], editingIdx = -1, dragIdx = -1, isDragging = false, startX, startY;
     const canvas = document.getElementById('plannerCanvas'), ctx = canvas.getContext('2d');
     const colorPalette = ['#D4DDF4', '#D4E9F8', '#D8F4FB', '#DDD4F0', '#F0D7F1'];
     let mouse = { x: 0, y: 0, overIdx: -1 };
 
+    // 시작 화면 드롭다운 옵션 생성
+    function populateSetupSelects() {
+        const hSelects = [document.getElementById('start-h'), document.getElementById('end-h')];
+        const mSelects = [document.getElementById('start-m'), document.getElementById('end-m')];
+        
+        hSelects.forEach(s => {
+            for(let i=1; i<=12; i++) {
+                let opt = document.createElement('option');
+                opt.value = (i === 12) ? 0 : i; // 12시는 계산 시 0으로 처리 (오전/오후 합산용)
+                opt.text = String(i).padStart(2, '0');
+                if(i === 9 && s.id === 'start-h') opt.selected = true;
+                if(i === 9 && s.id === 'end-h') opt.selected = true;
+                s.add(opt);
+            }
+        });
+
+        mSelects.forEach(s => {
+            for(let i=0; i<60; i+=5) {
+                let opt = document.createElement('option');
+                opt.value = i;
+                opt.text = String(i).padStart(2, '0');
+                s.add(opt);
+            }
+        });
+    }
+    populateSetupSelects();
+
     function initChart() {
-        const s = document.getElementById('start-time').value.split(':'), e = document.getElementById('end-time').value.split(':');
-        startTime = parseInt(s[0])*60 + parseInt(s[1]); endTime = parseInt(e[0])*60 + parseInt(e[1]);
+        const sh = (parseInt(document.getElementById('start-h').value) + parseInt(document.getElementById('start-ampm').value));
+        const sm = parseInt(document.getElementById('start-m').value);
+        const eh = (parseInt(document.getElementById('end-h').value) + parseInt(document.getElementById('end-ampm').value));
+        const em = parseInt(document.getElementById('end-m').value);
+
+        startTime = sh * 60 + sm;
+        endTime = eh * 60 + em;
+        
         if(endTime <= startTime) endTime += 1440;
         totalMin = endTime - startTime;
+
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('main-widget').style.display = 'flex';
         render();
@@ -212,8 +203,10 @@
         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke();
 
         const now = new Date(), nowMin = now.getHours()*60 + now.getMinutes();
-        if(nowMin >= startTime && nowMin <= endTime) {
-            const angle = ((nowMin-startTime)/totalMin)*Math.PI*2 - Math.PI/2;
+        const relativeNow = (nowMin < startTime && endTime > 1440) ? nowMin + 1440 : nowMin;
+
+        if(relativeNow >= startTime && relativeNow <= endTime) {
+            const angle = ((relativeNow-startTime)/totalMin)*Math.PI*2 - Math.PI/2;
             ctx.beginPath(); ctx.moveTo(cx, cy);
             ctx.lineTo(cx+Math.cos(angle)*r, cy+Math.sin(angle)*r);
             ctx.strokeStyle = '#B2DFDB'; ctx.lineWidth = 2.5; ctx.stroke();
@@ -227,7 +220,7 @@
                 ctx.textAlign = "center"; ctx.fillText("+", mouse.x, mouse.y + 8);
             }
         }
-        updateInfo(nowMin);
+        updateInfo(relativeNow);
         requestAnimationFrame(render);
     }
 
@@ -253,7 +246,7 @@
         editingIdx = idx;
         document.getElementById('del-btn').style.visibility = idx === -1 ? "hidden" : "visible";
         document.getElementById('h-select').value = idx === -1 ? 0 : Math.floor(tasks[idx].dur/60);
-        document.getElementById('m-select').value = idx === -1 ? 0 : (Math.floor(tasks[idx].dur % 60 / 5) * 5);
+        document.getElementById('m-select').value = idx === -1 ? 0 : (Math.floor(tasks[idx].dur % 60 / 15) * 15);
         document.getElementById('task-in').value = idx === -1 ? "" : tasks[idx].name;
         document.getElementById('modal').style.display = 'block';
     }
@@ -280,20 +273,14 @@
             const s = startTime + c, e = s + t.dur;
             if(m >= s && m < e) {
                 timeEl.innerText = `${fmt(s)} ~ ${fmt(e)}`;
-                if(taskEl.innerText !== t.name) {
-                    taskEl.innerText = t.name;
-                    checkScroll();
-                }
+                if(taskEl.innerText !== t.name) { taskEl.innerText = t.name; checkScroll(); }
                 f = true;
             }
             c += t.dur;
         });
         if(!f) { 
             timeEl.innerText = "--:-- ~ --:--"; 
-            if(taskEl.innerText !== "일과 없음") {
-                taskEl.innerText = "일과 없음";
-                checkScroll();
-            }
+            if(taskEl.innerText !== "일과 없음") { taskEl.innerText = "일과 없음"; checkScroll(); }
         }
     }
 
@@ -301,9 +288,7 @@
         const taskEl = document.getElementById('display-task');
         const container = taskEl.parentElement;
         taskEl.classList.remove('scrolling');
-        if (taskEl.offsetWidth > container.offsetWidth) {
-            taskEl.classList.add('scrolling');
-        }
+        if (taskEl.offsetWidth > container.offsetWidth) { taskEl.classList.add('scrolling'); }
     }
     function fmt(m) { return `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 </script>
