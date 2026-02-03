@@ -2,84 +2,90 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Compact Mint Planner</title>
+    <title>Today To-Do Final</title>
     <style>
         :root { 
             --bg: #ffffff; 
             --text-main: #37352f; 
-            --accent-mint: #B2DFDB; /* 요청하신 민트색 */
-            --accent-dark: #80cbc4;
+            --accent-mint: #B2DFDB; 
             --border-soft: #f1f1f0;
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             display: flex; flex-direction: column; align-items: center; 
-            background: var(--bg); margin: 0; padding: 10px; user-select: none; color: var(--text-main);
+            background: var(--bg); margin: 0; padding: 15px; user-select: none; color: var(--text-main);
         }
         
         #main-widget { display: flex; flex-direction: column; align-items: center; width: 100%; }
         
-        /* 크기 추가 축소: 220px -> 180px */
+        /* 크기 조정: 200px */
         #canvas-container { 
             position: relative; 
-            width: 180px; height: 180px; 
-            margin-bottom: 20px;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1)); /* 회색 그림자 */
+            width: 200px; height: 200px; 
+            margin-bottom: 25px;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
         }
         
+        /* 정보 패널: 흰색 배경 + 그림자 */
         .info-panel { 
             text-align: center; 
-            padding: 8px 12px;
-            border-radius: 10px;
-            background: var(--accent-mint); /* 박스 색상 변경 */
-            border: 1px solid var(--accent-dark);
-            min-width: 160px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid var(--border-soft);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            min-width: 170px;
         }
         .current-time { 
-            color: #455a64; /* 가독성을 위해 시간 텍스트는 짙은 회보라색 */
+            background-color: var(--accent-mint); /* 시간 부분만 민트색 */
+            color: #333;
             font-weight: 700; 
-            font-size: 1rem; 
-            margin-bottom: 2px; 
+            font-size: 1.1rem; 
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 6px; 
         }
-        .current-task { font-size: 0.9rem; color: #263238; font-weight: 500; }
+        .current-task { font-size: 1rem; color: var(--text-main); font-weight: 500; }
         
         #modal { 
             display: none; position: fixed; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); background: white; 
             padding: 20px; border-radius: 12px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-            z-index: 1000; width: 220px; border: 1px solid var(--border-soft); 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15); 
+            z-index: 1000; width: 230px; border: 1px solid var(--border-soft); 
         }
         .input-row { display: flex; justify-content: center; gap: 8px; margin: 15px 0; }
-        select { padding: 6px; border-radius: 6px; border: 1px solid #ddd; outline: none; }
-        input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; }
-        .save-btn { width: 100%; background: var(--accent-dark); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        select { padding: 8px; border-radius: 6px; border: 1px solid #ddd; outline: none; background: #fff; }
+        input[type="text"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; font-size: 0.95rem; outline: none; }
+        .save-btn { width: 100%; background: #444; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
         
-        #setup-screen { text-align: center; padding-top: 40px; }
-        .setup-title { color: var(--accent-dark); font-weight: 700; font-size: 1.2rem; margin-bottom: 20px; }
+        #setup-screen { text-align: center; padding-top: 60px; }
+        .setup-title { color: #555; font-weight: 700; font-size: 1.4rem; margin-bottom: 25px; }
     </style>
 </head>
 <body>
 
 <div id="setup-screen">
     <div class="setup-title">Today To-Do</div>
-    <input type="time" id="start-time" value="09:00"> ~ <input type="time" id="end-time" value="21:00">
-    <br><br>
-    <button class="save-btn" onclick="initChart()" style="width: auto; padding: 8px 20px;">시작하기</button>
+    <div style="margin-bottom: 20px;">
+        <input type="time" id="start-time" value="09:00"> ~ <input type="time" id="end-time" value="21:00">
+    </div>
+    <button class="save-btn" onclick="initChart()" style="width: auto; padding: 10px 30px; background: var(--accent-mint); color: #333;">Start Planning</button>
 </div>
 
 <div id="main-widget" style="display:none;">
     <div id="canvas-container">
-        <canvas id="plannerCanvas" width="180" height="180"></canvas>
+        <canvas id="plannerCanvas" width="200" height="200"></canvas>
     </div>
     <div class="info-panel">
         <div id="display-time" class="current-time">--:-- ~ --:--</div>
-        <div id="display-task" class="current-task">일과 없음</div>
+        <div id="display-task" class="current-task">일과가 없습니다</div>
     </div>
 </div>
 
 <div id="modal">
-    <h4 style="margin: 0 0 10px 0; text-align: center; font-size: 0.95rem;">일과 설정</h4>
+    <h4 style="margin: 0 0 15px 0; text-align: center;">일과 추가</h4>
     <div class="input-row">
         <select id="h-select">
             <option value="0">0h</option>
@@ -96,25 +102,30 @@
             <option value="11">11h</option>
             <option value="12">12h</option>
         </select>
-        <select id="m-select"></select>
+        <select id="m-select">
+            <option value="0">0m</option>
+            <option value="5">5m</option>
+            <option value="10">10m</option>
+            <option value="15">15m</option>
+            <option value="20">20m</option>
+            <option value="25">25m</option>
+            <option value="30">30m</option>
+            <option value="35">35m</option>
+            <option value="40">40m</option>
+            <option value="45">45m</option>
+            <option value="50">50m</option>
+            <option value="55">55m</option>
+        </select>
     </div>
-    <input type="text" id="task-in" placeholder="할 일">
+    <input type="text" id="task-in" placeholder="할 일 입력">
     <button class="save-btn" onclick="handleSave()">저장</button>
-    <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button id="del-btn" onclick="deleteTask()" style="flex: 1; background: none; border: none; color: #ff8a80; cursor: pointer; font-size: 0.8rem;">삭제</button>
-        <button onclick="closeModal()" style="flex: 1; background: none; border: none; color: #999; cursor: pointer; font-size: 0.8rem;">취소</button>
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button id="del-btn" onclick="deleteTask()" style="flex: 1; background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.85rem;">삭제</button>
+        <button onclick="closeModal()" style="flex: 1; background: none; border: none; color: #999; cursor: pointer; font-size: 0.85rem;">취소</button>
     </div>
 </div>
 
 <script>
-    // 분 선택 드롭다운 (5분 단위)
-    const mSelect = document.getElementById('m-select');
-    for(let i=0; i<60; i+=5) {
-        let opt = document.createElement('option');
-        opt.value = i; opt.innerText = i + 'm';
-        mSelect.appendChild(opt);
-    }
-
     let startTime, endTime, totalMin, tasks = [], editingIdx = -1, dragIdx = -1, isDragging = false, startX, startY;
     const canvas = document.getElementById('plannerCanvas'), ctx = canvas.getContext('2d');
     const colorPalette = ['#D4E9F8', '#F0D7F1', '#D8F4FB', '#DDD4F0', '#D4DDF4', '#FFE0F0', '#E0F7FA', '#E8EAF6'];
@@ -131,8 +142,8 @@
     }
 
     function render() {
-        ctx.clearRect(0,0,180,180);
-        const cx=90, cy=90, r=85;
+        ctx.clearRect(0,0,200,200);
+        const cx=100, cy=100, r=95;
         
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
         ctx.fillStyle = '#fff'; ctx.fill();
@@ -149,7 +160,7 @@
             curA += sweep;
         });
 
-        // 원 테두리 (순백색)
+        // 원 외곽선 (세련된 화이트)
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke();
 
@@ -164,9 +175,9 @@
             ctx.fillStyle = '#B2DFDB'; ctx.fill();
         }
 
-        if(mouse.overIdx === -1 && Math.sqrt((mouse.x-90)**2 + (mouse.y-90)**2) < 85) {
+        if(mouse.overIdx === -1 && Math.sqrt((mouse.x-100)**2 + (mouse.y-100)**2) < 95) {
             if(tasks.reduce((s,t)=>s+t.dur,0) < totalMin) {
-                ctx.fillStyle = "rgba(178, 223, 219, 0.6)"; ctx.font = "bold 22px sans-serif";
+                ctx.fillStyle = "rgba(178, 223, 219, 0.4)"; ctx.font = "bold 24px sans-serif";
                 ctx.textAlign = "center"; ctx.fillText("+", mouse.x, mouse.y + 8);
             }
         }
@@ -177,7 +188,7 @@
     canvas.addEventListener('mousemove', e => {
         const rect = canvas.getBoundingClientRect();
         mouse.x = e.clientX - rect.left; mouse.y = e.clientY - rect.top;
-        const dx = mouse.x - 90, dy = mouse.y - 90;
+        const dx = mouse.x - 100, dy = mouse.y - 100;
         let angle = Math.atan2(dy, dx); if(angle < -Math.PI/2) angle += Math.PI*2;
         mouse.overIdx = tasks.findIndex(t => angle >= t.startA && angle < t.endA);
         if(isDragging && dragIdx !== -1 && mouse.overIdx !== -1 && mouse.overIdx !== dragIdx) {
@@ -188,7 +199,7 @@
     canvas.addEventListener('mousedown', e => { startX = e.clientX; startY = e.clientY; if(mouse.overIdx !== -1) { dragIdx = mouse.overIdx; isDragging = true; } });
     window.addEventListener('mouseup', e => {
         const d = Math.sqrt((e.clientX - startX)**2 + (e.clientY - startY)**2);
-        if(d < 5 && Math.sqrt((mouse.x-90)**2 + (mouse.y-90)**2) < 85) openEdit(mouse.overIdx);
+        if(d < 5 && Math.sqrt((mouse.x-100)**2 + (mouse.y-100)**2) < 95) openEdit(mouse.overIdx);
         isDragging = false; dragIdx = -1;
     });
 
