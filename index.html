@@ -28,13 +28,14 @@
             border-radius: 12px;
             background: #ffffff;
             border: 1px solid var(--border-soft);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             min-width: 170px;
         }
+        /* 글자 배경색 없이 글자색만 민트색으로 적용 */
         .current-time { 
             color: var(--accent-mint); 
             font-weight: 800; 
-            font-size: 1.3rem; 
+            font-size: 1.2rem; 
             display: inline-block;
             margin-bottom: 4px; 
         }
@@ -45,10 +46,10 @@
             transform: translate(-50%, -50%); background: white; 
             padding: 20px; border-radius: 12px; 
             box-shadow: 0 10px 40px rgba(0,0,0,0.15); 
-            z-index: 1000; width: 240px; border: 1px solid var(--border-soft); 
+            z-index: 1000; width: 230px; border: 1px solid var(--border-soft); 
         }
-        .input-row { display: flex; justify-content: center; gap: 5px; margin: 15px 0; }
-        select { padding: 8px; border-radius: 4px; border: 1px solid #ddd; outline: none; background: #fff; font-size: 0.9rem; }
+        .input-row { display: flex; justify-content: center; gap: 8px; margin: 15px 0; }
+        select { padding: 8px; border-radius: 6px; border: 1px solid #ddd; outline: none; background: #fff; width: 85px; }
         input[type="text"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; font-size: 0.95rem; outline: none; }
         .save-btn { width: 100%; background: #444; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
         #setup-screen { text-align: center; padding-top: 60px; }
@@ -61,7 +62,7 @@
     <div style="margin-bottom: 20px;">
         <input type="time" id="start-time" value="09:00"> ~ <input type="time" id="end-time" value="21:00">
     </div>
-    <button class="save-btn" onclick="initChart()" style="width: auto; padding: 10px 30px; background: var(--accent-mint); color: #333; border-radius: 6px;">Start Planning</button>
+    <button class="save-btn" onclick="initChart()" style="width: auto; padding: 10px 30px; background: var(--accent-mint); color: #333;">Start Planning</button>
 </div>
 
 <div id="main-widget" style="display:none;">
@@ -70,32 +71,45 @@
     </div>
     <div class="info-panel">
         <div id="display-time" class="current-time">--:-- ~ --:--</div>
-        <div id="display-task" class="current-task">진행 중인 일과가 없습니다</div>
+        <div id="display-task" class="current-task">일과가 없습니다</div>
     </div>
 </div>
 
 <div id="modal">
-    <h4 style="margin: 0 0 15px 0; text-align: center; font-weight: 600;">일과 설정</h4>
+    <h4 style="margin: 0 0 15px 0; text-align: center;">일과 설정</h4>
     <div class="input-row">
-        <select id="ampm-select">
-            <option value="AM">오전</option>
-            <option value="PM">오후</option>
-        </select>
         <select id="h-select">
-            <option value="1">01</option><option value="2">02</option><option value="3">03</option>
-            <option value="4">04</option><option value="5">05</option><option value="6">06</option>
-            <option value="7">07</option><option value="8">08</option><option value="9">09</option>
-            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+            <option value="0">0h</option>
+            <option value="1" selected>1h</option>
+            <option value="2">2h</option>
+            <option value="3">3h</option>
+            <option value="4">4h</option>
+            <option value="5">5h</option>
+            <option value="6">6h</option>
+            <option value="7">7h</option>
+            <option value="8">8h</option>
+            <option value="9">9h</option>
+            <option value="10">10h</option>
+            <option value="11">11h</option>
+            <option value="12">12h</option>
         </select>
         <select id="m-select">
-            <option value="5">05</option><option value="10">10</option><option value="15">15</option>
-            <option value="20">20</option><option value="25">25</option><option value="30">30</option>
-            <option value="35">35</option><option value="40">40</option><option value="45">45</option>
-            <option value="50">50</option><option value="55">55</option><option value="60">60</option>
+            <option value="0">0m</option>
+            <option value="5">5m</option>
+            <option value="10">10m</option>
+            <option value="15">15m</option>
+            <option value="20">20m</option>
+            <option value="25">25m</option>
+            <option value="30">30m</option>
+            <option value="35">35m</option>
+            <option value="40">40m</option>
+            <option value="45">45m</option>
+            <option value="50">50m</option>
+            <option value="55">55m</option>
         </select>
     </div>
     <input type="text" id="task-in" placeholder="할 일 입력">
-    <button class="save-btn" onclick="handleSave()">저장하기</button>
+    <button class="save-btn" onclick="handleSave()">저장</button>
     <div style="display: flex; gap: 10px; margin-top: 15px;">
         <button id="del-btn" onclick="deleteTask()" style="flex: 1; background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.85rem;">삭제</button>
         <button onclick="closeModal()" style="flex: 1; background: none; border: none; color: #999; cursor: pointer; font-size: 0.85rem;">취소</button>
@@ -179,44 +193,27 @@
 
     function openEdit(idx) {
         editingIdx = idx;
-        const modal = document.getElementById('modal');
         document.getElementById('del-btn').style.visibility = idx === -1 ? "hidden" : "visible";
-        if(idx !== -1) {
-            const h = Math.floor(tasks[idx].dur / 60);
-            const m = tasks[idx].dur % 60 || 60;
-            document.getElementById('h-select').value = h || 12;
-            document.getElementById('m-select').value = m;
-            document.getElementById('task-in').value = tasks[idx].name;
-        } else {
-            document.getElementById('h-select').value = "1";
-            document.getElementById('m-select').value = "30";
-            document.getElementById('task-in').value = "";
-        }
-        modal.style.display = 'block';
+        document.getElementById('h-select').value = idx === -1 ? 1 : Math.floor(tasks[idx].dur/60);
+        document.getElementById('m-select').value = idx === -1 ? 0 : (Math.floor(tasks[idx].dur % 60 / 5) * 5);
+        document.getElementById('task-in').value = idx === -1 ? "" : tasks[idx].name;
+        document.getElementById('modal').style.display = 'block';
     }
 
     function handleSave() {
         const h = parseInt(document.getElementById('h-select').value);
         const m = parseInt(document.getElementById('m-select').value);
-        const d = (h === 12 ? 0 : h) * 60 + (m === 60 ? 60 : m); // 시간 계산 로직
-        const dur = (h * 60) + (m === 60 ? 0 : 0); // 단순화된 입력값 사용
-        
-        // 실제 입력된 분 단위를 그대로 일과 길이로 사용
-        const actualDur = (parseInt(document.getElementById('h-select').value) * 60) + (parseInt(document.getElementById('m-select').value) % 60);
-        
-        const finalDur = (h * 60) + (m % 60); 
-
-        if(finalDur <= 0) return;
+        const d = (h * 60) + m;
+        if(d <= 0) return;
         const used = tasks.reduce((s, t, i) => s + (i === editingIdx ? 0 : t.dur), 0);
-        if(finalDur > (totalMin - used)) { alert("남은 시간을 초과했습니다."); return; }
-        
+        if(d > (totalMin - used)) { alert("시간 초과!"); return; }
         const n = document.getElementById('task-in').value || "일과";
-        if(editingIdx > -1) tasks[editingIdx] = { dur: finalDur, name: n }; else tasks.push({ dur: finalDur, name: n });
+        if(editingIdx > -1) tasks[editingIdx] = { dur: d, name: n }; else tasks.push({ dur: d, name: n });
         closeModal();
     }
-
     function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); closeModal(); }
     
+    /* 팝업 닫기 기능을 단순화하여 확실히 동작하도록 수정 */
     function closeModal() { 
         document.getElementById('modal').style.display = 'none'; 
     }
@@ -233,7 +230,7 @@
         });
         if(!f) { 
             document.getElementById('display-time').innerText = "--:-- ~ --:--"; 
-            document.getElementById('display-task').innerText = "일과가 없습니다"; 
+            document.getElementById('display-task').innerText = "일과 없음"; 
         }
     }
     function fmt(m) { return `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
