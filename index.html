@@ -2,12 +2,12 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Today To-Do Final</title>
+    <title>Today To-Do Final Fixed</title>
     <style>
         :root { 
             --bg: #ffffff; 
             --text-main: #37352f; 
-            --accent-mint: #B2DFDB; 
+            --accent-mint: #B2DFDB; /* 요청하신 민트색 */
             --border-soft: #f1f1f0;
         }
         body { 
@@ -18,7 +18,6 @@
         
         #main-widget { display: flex; flex-direction: column; align-items: center; width: 100%; }
         
-        /* 크기 조정: 200px */
         #canvas-container { 
             position: relative; 
             width: 200px; height: 200px; 
@@ -26,7 +25,6 @@
             filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
         }
         
-        /* 정보 패널: 흰색 배경 + 그림자 */
         .info-panel { 
             text-align: center; 
             padding: 10px 20px;
@@ -37,14 +35,11 @@
             min-width: 170px;
         }
         .current-time { 
-            background-color: var(--accent-mint); /* 시간 부분만 민트색 */
-            color: #333;
-            font-weight: 700; 
-            font-size: 1.1rem; 
-            padding: 2px 8px;
-            border-radius: 4px;
+            color: var(--accent-mint); /* 배경색 제거, 글자색만 변경 */
+            font-weight: 800; 
+            font-size: 1.2rem; 
             display: inline-block;
-            margin-bottom: 6px; 
+            margin-bottom: 4px; 
         }
         .current-task { font-size: 1rem; color: var(--text-main); font-weight: 500; }
         
@@ -56,18 +51,17 @@
             z-index: 1000; width: 230px; border: 1px solid var(--border-soft); 
         }
         .input-row { display: flex; justify-content: center; gap: 8px; margin: 15px 0; }
-        select { padding: 8px; border-radius: 6px; border: 1px solid #ddd; outline: none; background: #fff; }
+        select { padding: 8px; border-radius: 6px; border: 1px solid #ddd; outline: none; background: #fff; width: 80px; }
         input[type="text"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; font-size: 0.95rem; outline: none; }
         .save-btn { width: 100%; background: #444; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
         
         #setup-screen { text-align: center; padding-top: 60px; }
-        .setup-title { color: #555; font-weight: 700; font-size: 1.4rem; margin-bottom: 25px; }
     </style>
 </head>
 <body>
 
 <div id="setup-screen">
-    <div class="setup-title">Today To-Do</div>
+    <h2 style="color: #555; margin-bottom: 25px;">Today To-Do</h2>
     <div style="margin-bottom: 20px;">
         <input type="time" id="start-time" value="09:00"> ~ <input type="time" id="end-time" value="21:00">
     </div>
@@ -144,7 +138,6 @@
     function render() {
         ctx.clearRect(0,0,200,200);
         const cx=100, cy=100, r=95;
-        
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
         ctx.fillStyle = '#fff'; ctx.fill();
 
@@ -160,11 +153,9 @@
             curA += sweep;
         });
 
-        // 원 외곽선 (세련된 화이트)
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke();
 
-        // 민트색 시간 바늘
         const now = new Date(), nowMin = now.getHours()*60 + now.getMinutes();
         if(nowMin >= startTime && nowMin <= endTime) {
             const angle = ((nowMin-startTime)/totalMin)*Math.PI*2 - Math.PI/2;
@@ -224,7 +215,7 @@
         closeModal();
     }
     function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); closeModal(); }
-    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+    function closeModal() { document.getElementById('modal-title').innerText = "일과 설정"; document.getElementById('modal').style.display = 'none'; }
     function updateInfo(m) {
         let c = 0, f = false;
         tasks.forEach(t => {
