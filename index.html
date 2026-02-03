@@ -15,32 +15,79 @@
             display: flex; flex-direction: column; align-items: center; 
             background: var(--bg); margin: 0; padding: 15px; user-select: none; color: var(--text-main);
         }
-        #main-widget { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        #main-widget { display: flex; flex-direction: column; align-items: center; width: 100%; position: relative; }
+        
+        /* 리셋 버튼 스타일 */
+        #reset-btn {
+            position: absolute;
+            top: -10px;
+            right: 0;
+            background: #f1f1f0;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: #787774;
+            transition: background 0.2s;
+        }
+        #reset-btn:hover { background: #e9e9e8; }
+
         #canvas-container { 
             position: relative; 
             width: 200px; height: 200px; 
             margin-bottom: 25px;
             filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1));
         }
+        
+        /* 정보 패널: 크기 고정 및 텍스트 흐름 설정 */
         .info-panel { 
             text-align: center; 
-            padding: 10px 20px;
+            padding: 10px 15px;
             border-radius: 12px;
             background: #ffffff;
             border: 1px solid var(--border-soft);
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            min-width: 170px;
+            width: 170px; /* 박스 크기 고정 */
+            overflow: hidden; /* 넘치는 텍스트 숨김 */
         }
-        /* 글자 배경색 없이 글자색만 민트색으로 적용 */
+        
         .current-time { 
             color: var(--accent-mint); 
             font-weight: 800; 
             font-size: 1.2rem; 
             display: inline-block;
             margin-bottom: 4px; 
+            white-space: nowrap;
         }
-        .current-task { font-size: 1rem; color: var(--text-main); font-weight: 500; }
-        
+
+        /* 전광판 효과 컨테이너 */
+        .marquee-container {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .current-task { 
+            display: inline-block;
+            font-size: 1rem; 
+            color: var(--text-main); 
+            font-weight: 500;
+        }
+
+        /* 텍스트가 길 때만 적용될 애니메이션 클래스 */
+        .scrolling {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 7s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+
         #modal { 
             display: none; position: fixed; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); background: white; 
@@ -66,12 +113,15 @@
 </div>
 
 <div id="main-widget" style="display:none;">
+    <button id="reset-btn" onclick="resetWidget()">Reset</button>
     <div id="canvas-container">
         <canvas id="plannerCanvas" width="200" height="200"></canvas>
     </div>
     <div class="info-panel">
         <div id="display-time" class="current-time">--:-- ~ --:--</div>
-        <div id="display-task" class="current-task">일과가 없습니다</div>
+        <div class="marquee-container">
+            <div id="display-task" class="current-task">일과 없음</div>
+        </div>
     </div>
 </div>
 
@@ -130,6 +180,14 @@
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('main-widget').style.display = 'flex';
         render();
+    }
+
+    function resetWidget() {
+        if(confirm("모든 일과가 초기화됩니다. 다시 설정하시겠습니까?")) {
+            tasks = [];
+            document.getElementById('setup-screen').style.display = 'block';
+            document.getElementById('main-widget').style.display = 'none';
+        }
     }
 
     function render() {
@@ -212,27 +270,48 @@
         closeModal();
     }
     function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); closeModal(); }
-    
-    /* 팝업 닫기 기능을 단순화하여 확실히 동작하도록 수정 */
-    function closeModal() { 
-        document.getElementById('modal').style.display = 'none'; 
-    }
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
     function updateInfo(m) {
         let c = 0, f = false;
+        const timeEl = document.getElementById('display-time');
+        const taskEl = document.getElementById('display-task');
+
         tasks.forEach(t => {
             const s = startTime + c, e = s + t.dur;
             if(m >= s && m < e) {
-                document.getElementById('display-time').innerText = `${fmt(s)} ~ ${fmt(e)}`;
-                document.getElementById('display-task').innerText = t.name; f = true;
+                timeEl.innerText = `${fmt(s)} ~ ${fmt(e)}`;
+                if(taskEl.innerText !== t.name) {
+                    taskEl.innerText = t.name;
+                    checkScroll();
+                }
+                f = true;
             }
             c += t.dur;
         });
+
         if(!f) { 
-            document.getElementById('display-time').innerText = "--:-- ~ --:--"; 
-            document.getElementById('display-task').innerText = "일과 없음"; 
+            timeEl.innerText = "--:-- ~ --:--"; 
+            if(taskEl.innerText !== "일과 없음") {
+                taskEl.innerText = "일과 없음";
+                checkScroll();
+            }
         }
     }
+
+    // 텍스트 길이를 체크하여 애니메이션 적용
+    function checkScroll() {
+        const taskEl = document.getElementById('display-task');
+        const container = taskEl.parentElement;
+        
+        // 애니메이션 초기화
+        taskEl.classList.remove('scrolling');
+        
+        if (taskEl.offsetWidth > container.offsetWidth) {
+            taskEl.classList.add('scrolling');
+        }
+    }
+
     function fmt(m) { return `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 </script>
 </body>
