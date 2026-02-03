@@ -2,15 +2,13 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Soft Pastel Planner</title>
+    <title>Compact Purple Planner</title>
     <style>
         :root { 
             --bg: #ffffff; 
-            --text-main: #444444; 
-            --text-sub: #888888;
-            /* 침과 시간 글씨에 사용할 부드러운 로즈/코랄 톤 */
-            --point-pastel: #f4a7a7; 
-            --border-soft: #f0f0f0;
+            --text-main: #37352f; 
+            --accent-purple: #6a5acd; /* 세련된 진한 보라색 */
+            --border-soft: #f1f1f0;
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
@@ -20,48 +18,48 @@
         
         #main-widget { display: flex; flex-direction: column; align-items: center; width: 100%; }
         
-        /* 전체 크기 축소 (320px -> 260px) */
+        /* 크기 축소: 320px -> 220px */
         #canvas-container { 
             position: relative; 
-            width: 260px; height: 260px; 
-            margin-bottom: 25px;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.05));
+            width: 220px; height: 220px; 
+            margin-bottom: 20px;
+            filter: drop-shadow(0 2px 8px rgba(106, 90, 205, 0.1));
         }
         
-        /* 정보 패널: 빨간색 제거 및 파스텔 톤 적용 */
+        /* 정보 패널: 더 콤팩트하게 */
         .info-panel { 
             text-align: center; 
             padding: 8px 15px;
             border-radius: 10px;
-            background: #fdfdfd;
+            background: #f9f9fb;
             border: 1px solid var(--border-soft);
-            min-width: 200px;
+            min-width: 180px;
         }
         .current-time { 
-            color: var(--point-pastel); 
+            color: var(--accent-purple); 
             font-weight: 700; 
-            font-size: 1.15rem; 
-            margin-bottom: 4px; 
+            font-size: 1.1rem; 
+            margin-bottom: 3px; 
         }
         .current-task { 
-            font-size: 1rem; 
+            font-size: 0.95rem; 
             color: var(--text-main); 
             font-weight: 500;
         }
         
-        /* 모달 스타일 유지 */
+        /* 모달 스타일 */
         #modal { 
             display: none; position: fixed; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); background: white; 
             padding: 20px; border-radius: 12px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
             z-index: 1000; width: 240px; border: 1px solid var(--border-soft); 
         }
         .input-row { display: flex; justify-content: center; gap: 10px; margin: 15px 0; }
-        .num-ctrl input { width: 50px; text-align: center; padding: 8px; border: 1px solid #eee; border-radius: 6px; }
-        .arrow-btn { cursor: pointer; background: #fafafa; border: 1px solid #ddd; width: 35px; height: 28px; border-radius: 4px; }
-        input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #eee; border-radius: 6px; margin-bottom: 15px; outline: none; }
-        .save-btn { width: 100%; background: #555; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; }
+        .num-ctrl input { width: 50px; text-align: center; font-size: 1rem; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
+        .arrow-btn { cursor: pointer; background: #f5f5f5; border: 1px solid #ddd; width: 35px; height: 28px; border-radius: 4px; }
+        input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; }
+        .save-btn { width: 100%; background: var(--accent-purple); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
         
         #setup-screen { text-align: center; padding-top: 50px; }
     </style>
@@ -69,15 +67,15 @@
 <body>
 
 <div id="setup-screen">
-    <h3 style="color: #666;">Set Your Day</h3>
+    <h3 style="color: var(--accent-purple);">Daily Routine</h3>
     <input type="time" id="start-time" value="09:00"> ~ <input type="time" id="end-time" value="21:00">
     <br><br>
-    <button class="save-btn" onclick="initChart()" style="width: auto; padding: 8px 20px;">Create Planner</button>
+    <button class="save-btn" onclick="initChart()" style="width: auto; padding: 10px 20px;">시작하기</button>
 </div>
 
 <div id="main-widget" style="display:none;">
     <div id="canvas-container">
-        <canvas id="plannerCanvas" width="260" height="260"></canvas>
+        <canvas id="plannerCanvas" width="220" height="220"></canvas>
     </div>
     <div class="info-panel">
         <div id="display-time" class="current-time">--:-- ~ --:--</div>
@@ -86,7 +84,7 @@
 </div>
 
 <div id="modal">
-    <h4 id="modal-title" style="margin: 0 0 10px 0; text-align: center;">Edit Plan</h4>
+    <h4 style="margin: 0 0 10px 0; text-align: center;">일과 설정</h4>
     <div class="input-row">
         <div class="num-ctrl">
             <button class="arrow-btn" onclick="adj(1,0)">▲</button>
@@ -99,31 +97,23 @@
             <button class="arrow-btn" onclick="adj(0,-15)">▼</button>
         </div>
     </div>
-    <input type="text" id="task-in" placeholder="할 일 입력">
+    <input type="text" id="task-in" placeholder="할 일">
     <button class="save-btn" onclick="handleSave()">저장</button>
     <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button id="del-btn" onclick="deleteTask()" style="flex: 1; background: none; border: none; color: #aaa; cursor: pointer; font-size: 0.8rem;">삭제</button>
-        <button onclick="closeModal()" style="flex: 1; background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.8rem;">취소</button>
+        <button id="del-btn" onclick="deleteTask()" style="flex: 1; background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.8rem;">삭제</button>
+        <button onclick="closeModal()" style="flex: 1; background: none; border: none; color: #999; cursor: pointer; font-size: 0.8rem;">취소</button>
     </div>
 </div>
 
 <script>
-    let startTime, endTime, totalMin;
-    let tasks = [];
-    let editingIdx = -1, dragIdx = -1, isDragging = false, startX, startY;
-
-    const canvas = document.getElementById('plannerCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    // 파스텔 순환: 하늘 -> 분홍 -> 하늘 -> 연보라
+    let startTime, endTime, totalMin, tasks = [], editingIdx = -1, dragIdx = -1, isDragging = false, startX, startY;
+    const canvas = document.getElementById('plannerCanvas'), ctx = canvas.getContext('2d');
     const colorPalette = ['#D4E9F8', '#F0D7F1', '#D8F4FB', '#DDD4F0', '#D4DDF4', '#FFE0F0', '#E0F7FA', '#E8EAF6'];
     let mouse = { x: 0, y: 0, overIdx: -1 };
 
     function initChart() {
-        const s = document.getElementById('start-time').value.split(':');
-        const e = document.getElementById('end-time').value.split(':');
-        startTime = parseInt(s[0])*60 + parseInt(s[1]);
-        endTime = parseInt(e[0])*60 + parseInt(e[1]);
+        const s = document.getElementById('start-time').value.split(':'), e = document.getElementById('end-time').value.split(':');
+        startTime = parseInt(s[0])*60 + parseInt(s[1]); endTime = parseInt(e[0])*60 + parseInt(e[1]);
         if(endTime <= startTime) endTime += 1440;
         totalMin = endTime - startTime;
         document.getElementById('setup-screen').style.display = 'none';
@@ -141,48 +131,43 @@
     }
 
     function render() {
-        ctx.clearRect(0,0,260,260);
-        const cx=130, cy=130, r=120; // 반지름 축소
+        ctx.clearRect(0,0,220,220);
+        const cx=110, cy=110, r=100;
         
-        // 배경 원: 검은 테두리 대신 연한 회색으로 변경
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
-        ctx.fillStyle = '#ffffff'; ctx.fill();
-        ctx.strokeStyle = '#eeeeee'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.fill();
 
         let curA = -Math.PI/2;
         tasks.forEach((t, i) => {
             const sweep = (t.dur / totalMin) * Math.PI*2;
             ctx.beginPath(); ctx.moveTo(cx, cy);
             ctx.arc(cx, cy, r, curA, curA + sweep);
-            ctx.fillStyle = (dragIdx === i) ? '#f9f9f9' : colorPalette[i % colorPalette.length];
+            ctx.fillStyle = (dragIdx === i) ? '#f0f0f0' : colorPalette[i % colorPalette.length];
             ctx.fill();
-            ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
             t.startA = curA; t.endA = curA + sweep;
             curA += sweep;
         });
 
-        // 원 전체 테두리: 검정색 제거 -> 부드러운 회색
+        // 원 전체 외곽선 (까만색 대신 연한 보라/회색)
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
-        ctx.strokeStyle = '#dddddd'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.strokeStyle = '#6a5acd'; ctx.lineWidth = 2; ctx.stroke();
 
-        // 현재 시간 침: 빨간색 제거 -> 파스텔 핑크(var(--point-pastel))
-        const now = new Date();
-        const nowMin = now.getHours()*60 + now.getMinutes();
+        // 보라색 시간 바늘
+        const now = new Date(), nowMin = now.getHours()*60 + now.getMinutes();
         if(nowMin >= startTime && nowMin <= endTime) {
             const angle = ((nowMin-startTime)/totalMin)*Math.PI*2 - Math.PI/2;
             ctx.beginPath(); ctx.moveTo(cx, cy);
             ctx.lineTo(cx+Math.cos(angle)*r, cy+Math.sin(angle)*r);
-            ctx.strokeStyle = '#f4a7a7'; ctx.lineWidth = 2; ctx.stroke();
-            
+            ctx.strokeStyle = '#6a5acd'; ctx.lineWidth = 2; ctx.stroke();
             ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2);
-            ctx.fillStyle = '#f4a7a7'; ctx.fill();
+            ctx.fillStyle = '#6a5acd'; ctx.fill();
         }
 
-        if(mouse.overIdx === -1 && Math.sqrt((mouse.x-130)**2 + (mouse.y-130)**2) < 120) {
-            const used = tasks.reduce((s, t) => s + t.dur, 0);
-            if(used < totalMin) {
-                ctx.fillStyle = "rgba(0,0,0,0.1)"; ctx.font = "28px Arial";
-                ctx.textAlign = "center"; ctx.fillText("+", mouse.x, mouse.y + 10);
+        if(mouse.overIdx === -1 && Math.sqrt((mouse.x-110)**2 + (mouse.y-110)**2) < 100) {
+            if(tasks.reduce((s,t)=>s+t.dur,0) < totalMin) {
+                ctx.fillStyle = "rgba(106, 90, 205, 0.3)"; ctx.font = "24px Arial";
+                ctx.textAlign = "center"; ctx.fillText("+", mouse.x, mouse.y + 8);
             }
         }
         updateInfo(nowMin);
@@ -192,59 +177,47 @@
     canvas.addEventListener('mousemove', e => {
         const rect = canvas.getBoundingClientRect();
         mouse.x = e.clientX - rect.left; mouse.y = e.clientY - rect.top;
-        const dx = mouse.x - 130, dy = mouse.y - 130;
-        let angle = Math.atan2(dy, dx);
-        if(angle < -Math.PI/2) angle += Math.PI*2;
+        const dx = mouse.x - 110, dy = mouse.y - 110;
+        let angle = Math.atan2(dy, dx); if(angle < -Math.PI/2) angle += Math.PI*2;
         mouse.overIdx = tasks.findIndex(t => angle >= t.startA && angle < t.endA);
         if(isDragging && dragIdx !== -1 && mouse.overIdx !== -1 && mouse.overIdx !== dragIdx) {
-            const item = tasks.splice(dragIdx, 1)[0];
-            tasks.splice(mouse.overIdx, 0, item);
-            dragIdx = mouse.overIdx;
+            const item = tasks.splice(dragIdx, 1)[0]; tasks.splice(mouse.overIdx, 0, item); dragIdx = mouse.overIdx;
         }
     });
-
     canvas.addEventListener('mousedown', e => { startX = e.clientX; startY = e.clientY; if(mouse.overIdx !== -1) { dragIdx = mouse.overIdx; isDragging = true; } });
     window.addEventListener('mouseup', e => {
-        const dist = Math.sqrt((e.clientX - startX)**2 + (e.clientY - startY)**2);
-        if(dist < 5 && Math.sqrt((mouse.x-130)**2 + (mouse.y-130)**2) < 120) openEdit(mouse.overIdx);
+        const d = Math.sqrt((e.clientX - startX)**2 + (e.clientY - startY)**2);
+        if(d < 5 && Math.sqrt((mouse.x-110)**2 + (mouse.y-110)**2) < 100) openEdit(mouse.overIdx);
         isDragging = false; dragIdx = -1;
     });
-
     function openEdit(idx) {
         editingIdx = idx;
-        document.getElementById('modal-title').innerText = idx === -1 ? "New Task" : "Edit Task";
         document.getElementById('del-btn').style.visibility = idx === -1 ? "hidden" : "visible";
         document.getElementById('h-in').value = idx === -1 ? 1 : Math.floor(tasks[idx].dur/60);
         document.getElementById('m-in').value = idx === -1 ? 0 : tasks[idx].dur%60;
         document.getElementById('task-in').value = idx === -1 ? "" : tasks[idx].name;
         document.getElementById('modal').style.display = 'block';
     }
-
     function handleSave() {
         const d = parseInt(document.getElementById('h-in').value)*60 + parseInt(document.getElementById('m-in').value);
         if(d <= 0) return;
-        const n = document.getElementById('task-in').value || "Doing something";
+        const n = document.getElementById('task-in').value || "할 일";
         if(editingIdx > -1) tasks[editingIdx] = { dur: d, name: n }; else tasks.push({ dur: d, name: n });
         closeModal();
     }
     function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); closeModal(); }
     function closeModal() { document.getElementById('modal').style.display = 'none'; }
-
-    function updateInfo(nowMin) {
-        let cum = 0, found = false;
+    function updateInfo(m) {
+        let c = 0, f = false;
         tasks.forEach(t => {
-            const s = startTime + cum, e = s + t.dur;
-            if(nowMin >= s && nowMin < e) {
+            const s = startTime + c, e = s + t.dur;
+            if(m >= s && m < e) {
                 document.getElementById('display-time').innerText = `${fmt(s)} ~ ${fmt(e)}`;
-                document.getElementById('display-task').innerText = t.name;
-                found = true;
+                document.getElementById('display-task').innerText = t.name; f = true;
             }
-            cum += t.dur;
+            c += t.dur;
         });
-        if(!found) {
-            document.getElementById('display-time').innerText = "--:-- ~ --:--";
-            document.getElementById('display-task').innerText = "일과가 없습니다";
-        }
+        if(!f) { document.getElementById('display-time').innerText = "--:-- ~ --:--"; document.getElementById('display-task').innerText = "일과가 없습니다"; }
     }
     function fmt(m) { return `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 </script>
