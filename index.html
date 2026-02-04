@@ -22,7 +22,7 @@
             position: absolute; top: -10px; left: 0; 
             background: none; border: none; padding: 4px 8px;
             font-size: 1.2rem; cursor: pointer; color: #787774;
-            line-height: 1;
+            line-height: 1; z-index: 10;
         }
 
         #canvas-container { 
@@ -47,12 +47,14 @@
         .scrolling { display: inline-block; padding-left: 100%; animation: marquee 7s linear infinite; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
-        #modal { 
+        /* 공통 모달 스타일 */
+        .modal-style {
             display: none; position: fixed; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); background: white; 
             padding: 20px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); 
             z-index: 1000; width: 230px; border: 1px solid var(--border-soft); 
         }
+
         .input-row { display: flex; justify-content: center; gap: 8px; margin: 15px 0; }
         select { padding: 8px; border-radius: 6px; border: 1px solid #ddd; outline: none; background: #fff; }
         
@@ -84,7 +86,7 @@
 </div>
 
 <div id="main-widget" style="display:none;">
-    <button id="reset-btn" onclick="resetWidget()" title="초기화">⟳</button>
+    <button id="reset-btn" onclick="openResetModal()" title="초기화">⟳</button>
     <div id="canvas-container">
         <canvas id="plannerCanvas" width="200" height="200"></canvas>
     </div>
@@ -96,7 +98,7 @@
     </div>
 </div>
 
-<div id="modal">
+<div id="modal" class="modal-style">
     <h4 style="margin: 0 0 15px 0; text-align: center;">일과 설정</h4>
     <div class="input-row">
         <select id="h-select" style="width: 85px;">
@@ -116,6 +118,15 @@
     <div style="display: flex; gap: 10px; margin-top: 15px;">
         <button id="del-btn" onclick="deleteTask()" style="flex: 1; background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.85rem;">삭제</button>
         <button onclick="closeModal()" style="flex: 1; background: none; border: none; color: #999; cursor: pointer; font-size: 0.85rem;">취소</button>
+    </div>
+</div>
+
+<div id="reset-modal" class="modal-style">
+    <h4 style="margin: 0 0 10px 0; text-align: center;">초기화하시겠습니까?</h4>
+    <p style="font-size: 0.85rem; color: #888; text-align: center; margin-bottom: 20px;">모든 일과 데이터가 삭제됩니다.</p>
+    <div style="display: flex; gap: 10px;">
+        <button class="save-btn" onclick="confirmReset()" style="flex: 1; background: #ff6b6b;">초기화</button>
+        <button class="save-btn" onclick="closeResetModal()" style="flex: 1; background: #eee; color: #444;">취소</button>
     </div>
 </div>
 
@@ -147,13 +158,11 @@
         });
     }
 
-    // 로컬 스토리지 저장 기능
     function saveToLocal() {
         const data = { startTime, endTime, totalMin, tasks };
         localStorage.setItem('todayTodoData', JSON.stringify(data));
     }
 
-    // 로컬 스토리지 로드 기능
     function loadFromLocal() {
         const saved = localStorage.getItem('todayTodoData');
         if (saved) {
@@ -183,13 +192,16 @@
         render();
     }
 
-    function resetWidget() {
-        if(confirm("모든 일과가 초기화됩니다. 다시 설정하시겠습니까?")) {
-            tasks = [];
-            localStorage.removeItem('todayTodoData'); // 저장 데이터 삭제
-            document.getElementById('setup-screen').style.display = 'block';
-            document.getElementById('main-widget').style.display = 'none';
-        }
+    /* 리셋 모달 관련 로직 */
+    function openResetModal() { document.getElementById('reset-modal').style.display = 'block'; }
+    function closeResetModal() { document.getElementById('reset-modal').style.display = 'none'; }
+    
+    function confirmReset() {
+        tasks = [];
+        localStorage.removeItem('todayTodoData');
+        closeResetModal();
+        document.getElementById('setup-screen').style.display = 'block';
+        document.getElementById('main-widget').style.display = 'none';
     }
 
     function render() {
@@ -238,7 +250,7 @@
         mouse.overIdx = tasks.findIndex(t => angle >= t.startA && angle < t.endA);
         if(isDragging && dragIdx !== -1 && mouse.overIdx !== -1 && mouse.overIdx !== dragIdx) {
             const item = tasks.splice(dragIdx, 1)[0]; tasks.splice(mouse.overIdx, 0, item); dragIdx = mouse.overIdx;
-            saveToLocal(); // 순서 바뀔 때 저장
+            saveToLocal();
         }
     });
 
@@ -267,7 +279,7 @@
         if(d > (totalMin - used)) { alert("시간 초과!"); return; }
         const n = document.getElementById('task-in').value || "일과";
         if(editingIdx > -1) tasks[editingIdx] = { dur: d, name: n }; else tasks.push({ dur: d, name: n });
-        saveToLocal(); // 저장
+        saveToLocal();
         closeModal();
     }
     function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); saveToLocal(); closeModal(); }
@@ -300,9 +312,8 @@
     }
     function fmt(m) { return `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 
-    // 초기화
     populateSetupSelects();
-    loadFromLocal(); // 페이지 로드 시 저장된 데이터 불러오기
+    loadFromLocal();
 </script>
 </body>
 </html>
