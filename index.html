@@ -10,6 +10,7 @@
             --text-gray: #555; 
             --accent-mint: #B2DFDB; 
             --border-soft: #f1f1f0;
+            --warning-red: #ff6b6b;
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
@@ -47,7 +48,7 @@
         .scrolling { display: inline-block; padding-left: 100%; animation: marquee 7s linear infinite; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
-        /* 공통 모달 스타일 */
+        /* 모달 공통 스타일 */
         .modal-style {
             display: none; position: fixed; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); background: white; 
@@ -62,7 +63,8 @@
         .setup-row select { width: 65px; padding: 5px; }
 
         input[type="text"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; font-size: 0.95rem; outline: none; }
-        .save-btn { width: 100%; background: #444; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .save-btn { width: 100%; background: #444; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+        .save-btn:active { opacity: 0.8; }
         #setup-screen { text-align: center; padding-top: 40px; }
     </style>
 </head>
@@ -116,7 +118,7 @@
     <input type="text" id="task-in" placeholder="할 일 입력">
     <button class="save-btn" onclick="handleSave()">저장</button>
     <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <button id="del-btn" onclick="deleteTask()" style="flex: 1; background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.85rem;">삭제</button>
+        <button id="del-btn" onclick="deleteTask()" style="flex: 1; background: none; border: none; color: var(--warning-red); cursor: pointer; font-size: 0.85rem;">삭제</button>
         <button onclick="closeModal()" style="flex: 1; background: none; border: none; color: #999; cursor: pointer; font-size: 0.85rem;">취소</button>
     </div>
 </div>
@@ -125,9 +127,15 @@
     <h4 style="margin: 0 0 10px 0; text-align: center;">초기화하시겠습니까?</h4>
     <p style="font-size: 0.85rem; color: #888; text-align: center; margin-bottom: 20px;">모든 일과 데이터가 삭제됩니다.</p>
     <div style="display: flex; gap: 10px;">
-        <button class="save-btn" onclick="confirmReset()" style="flex: 1; background: #ff6b6b;">초기화</button>
+        <button class="save-btn" onclick="confirmReset()" style="flex: 1; background: var(--warning-red);">초기화</button>
         <button class="save-btn" onclick="closeResetModal()" style="flex: 1; background: #eee; color: #444;">취소</button>
     </div>
+</div>
+
+<div id="alert-modal" class="modal-style">
+    <h4 style="margin: 0 0 10px 0; text-align: center; color: var(--warning-red);">시간 초과</h4>
+    <p id="alert-msg" style="font-size: 0.9rem; color: #555; text-align: center; margin-bottom: 20px; line-height: 1.4;"></p>
+    <button class="save-btn" onclick="closeAlertModal()" style="background: #eee; color: #444;">확인</button>
 </div>
 
 <script>
@@ -167,10 +175,8 @@
         const saved = localStorage.getItem('todayTodoData');
         if (saved) {
             const data = JSON.parse(saved);
-            startTime = data.startTime;
-            endTime = data.endTime;
-            totalMin = data.totalMin;
-            tasks = data.tasks;
+            startTime = data.startTime; endTime = data.endTime;
+            totalMin = data.totalMin; tasks = data.tasks;
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('main-widget').style.display = 'flex';
             render();
@@ -182,27 +188,28 @@
         const sm = parseInt(document.getElementById('start-m').value);
         const eh = (parseInt(document.getElementById('end-h').value) + parseInt(document.getElementById('end-ampm').value));
         const em = parseInt(document.getElementById('end-m').value);
-        startTime = sh * 60 + sm;
-        endTime = eh * 60 + em;
+        startTime = sh * 60 + sm; endTime = eh * 60 + em;
         if(endTime <= startTime) endTime += 1440;
         totalMin = endTime - startTime;
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('main-widget').style.display = 'flex';
-        saveToLocal();
-        render();
+        saveToLocal(); render();
     }
 
-    /* 리셋 모달 관련 로직 */
     function openResetModal() { document.getElementById('reset-modal').style.display = 'block'; }
     function closeResetModal() { document.getElementById('reset-modal').style.display = 'none'; }
-    
     function confirmReset() {
-        tasks = [];
-        localStorage.removeItem('todayTodoData');
+        tasks = []; localStorage.removeItem('todayTodoData');
         closeResetModal();
         document.getElementById('setup-screen').style.display = 'block';
         document.getElementById('main-widget').style.display = 'none';
     }
+
+    function openAlertModal(remain) {
+        document.getElementById('alert-msg').innerHTML = `전체 설정 시간을 초과했습니다.<br>설정 가능한 시간: <b>${remain}분</b> 남음`;
+        document.getElementById('alert-modal').style.display = 'block';
+    }
+    function closeAlertModal() { document.getElementById('alert-modal').style.display = 'none'; }
 
     function render() {
         ctx.clearRect(0,0,200,200);
@@ -226,11 +233,9 @@
         const relativeNow = (nowMin < startTime && endTime > 1440) ? nowMin + 1440 : nowMin;
         if(relativeNow >= startTime && relativeNow <= endTime) {
             const angle = ((relativeNow-startTime)/totalMin)*Math.PI*2 - Math.PI/2;
-            ctx.beginPath(); ctx.moveTo(cx, cy);
-            ctx.lineTo(cx+Math.cos(angle)*r, cy+Math.sin(angle)*r);
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx+Math.cos(angle)*r, cy+Math.sin(angle)*r);
             ctx.strokeStyle = '#B2DFDB'; ctx.lineWidth = 2.5; ctx.stroke();
-            ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2);
-            ctx.fillStyle = '#B2DFDB'; ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2); ctx.fillStyle = '#B2DFDB'; ctx.fill();
         }
         if(mouse.overIdx === -1 && Math.sqrt((mouse.x-100)**2 + (mouse.y-100)**2) < 95) {
             if(tasks.reduce((s,t)=>s+t.dur,0) < totalMin) {
@@ -275,13 +280,20 @@
         const m = parseInt(document.getElementById('m-select').value);
         const d = (h * 60) + m;
         if(d <= 0) return;
+        
         const used = tasks.reduce((s, t, i) => s + (i === editingIdx ? 0 : t.dur), 0);
-        if(d > (totalMin - used)) { alert("시간 초과!"); return; }
+        const remain = totalMin - used;
+        
+        if(d > remain) {
+            openAlertModal(remain);
+            return;
+        }
+        
         const n = document.getElementById('task-in').value || "일과";
         if(editingIdx > -1) tasks[editingIdx] = { dur: d, name: n }; else tasks.push({ dur: d, name: n });
-        saveToLocal();
-        closeModal();
+        saveToLocal(); closeModal();
     }
+    
     function deleteTask() { if(editingIdx > -1) tasks.splice(editingIdx, 1); saveToLocal(); closeModal(); }
     function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
